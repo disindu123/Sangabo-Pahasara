@@ -2510,7 +2510,12 @@ progress {
   overflow-wrap: anywhere;
 }
 .event-dialog > .button {
-  margin-top: 20px;
+  display: flex;
+  width: fit-content;
+  min-height: 38px;
+  padding: 8px 16px;
+  margin: 20px 0 0 auto;
+  font-size: 0.8rem;
 }
 .notification-item {
   padding-block: 25px;
