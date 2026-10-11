@@ -386,15 +386,9 @@ async function imageBody(key, form, data, collection = key) {
       const progress = $(`#${collection}-progress`);
       progress.hidden = false;
       progress.value = 0;
-      form.dataset.ticketId = await uploadPhoto(
-        staffApi,
-        firebase.storage,
-        collection,
-        file,
-        (value) => {
-          progress.value = value;
-        },
-      );
+      form.dataset.ticketId = await uploadPhoto(staffApi, collection, file, (value) => {
+        progress.value = value;
+      });
     }
     return { ticketId: form.dataset.ticketId };
   }

@@ -1,7 +1,4 @@
-import { ref, uploadBytesResumable } from './firebase.bundle.js';
-
-export async function uploadPhoto(staffApi, storage, collection, file, onProgress = () => {}) {
-  if (!storage) throw new Error('Firebase Storage is being configured.');
+export async function uploadPhoto(staffApi, collection, file, onProgress = () => {}) {
   if (
     !file ||
     !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) ||
@@ -13,16 +10,37 @@ export async function uploadPhoto(staffApi, storage, collection, file, onProgres
     method: 'POST',
     body: { collection, contentType: file.type, size: file.size },
   });
-  const task = uploadBytesResumable(ref(storage, ticket.storagePath), file, {
-    contentType: file.type,
+  if (
+    ticket.provider !== 'cloudinary' ||
+    !/^https:\/\/api\.cloudinary\.com\/v1_1\/[\w-]+\/image\/upload$/.test(ticket.uploadUrl)
+  )
+    throw new Error('Cloudinary uploads are being configured.');
+  const body = new FormData();
+  for (const [key, value] of Object.entries(ticket.fields)) body.append(key, String(value));
+  body.append('file', file);
+  onProgress(0);
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', ticket.uploadUrl);
+    xhr.timeout = 120_000;
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable)
+        onProgress(Math.min(99, Math.round((100 * event.loaded) / event.total)));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress(100);
+        resolve();
+      } else
+        reject(
+          new Error('Cloudinary could not upload this image. Please choose it again and retry.'),
+        );
+    };
+    xhr.onerror = () =>
+      reject(new Error('The photo upload failed. Check your connection and retry.'));
+    xhr.ontimeout = () => reject(new Error('The photo upload timed out. Please retry.'));
+    xhr.send(body);
   });
-  await new Promise((resolve, reject) =>
-    task.on(
-      'state_changed',
-      (s) => onProgress(Math.round((100 * s.bytesTransferred) / s.totalBytes)),
-      reject,
-      resolve,
-    ),
-  );
+  // The server rechecks ownership, expiry, actual format and bytes before publishing.
   return ticket.ticketId;
 }

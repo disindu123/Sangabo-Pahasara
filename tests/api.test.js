@@ -58,6 +58,9 @@ before(async () => {
     config: loadConfig({
       RATE_LIMIT_SALT: 'test-only-salt',
       FB_PRIVATE_KEY: 'private-test-secret',
+      CLOUDINARY_CLOUD_NAME: 'test-cloud',
+      CLOUDINARY_API_KEY: 'private-cloud-key',
+      CLOUDINARY_API_SECRET: 'private-cloud-secret',
     }),
     getServices: () => services,
   }).listen(0, '127.0.0.1');
@@ -86,6 +89,10 @@ test('public configuration omits Admin secrets and salts', async () => {
   assert.equal(res.status, 200);
   assert.ok(!JSON.stringify(res.body).includes('private-test-secret'));
   assert.ok(!JSON.stringify(res.body).includes('test-only-salt'));
+  assert.ok(!JSON.stringify(res.body).includes('private-cloud-secret'));
+  assert.ok(!JSON.stringify(res.body).includes('private-cloud-key'));
+  assert.equal(res.body.uploadProvider, 'cloudinary');
+  assert.equal(res.body.uploadsConfigured, true);
 });
 test('role matrix protects every management route independently of dashboard visibility', async () => {
   const cases = [

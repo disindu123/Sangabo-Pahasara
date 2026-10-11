@@ -19,12 +19,10 @@ async function staffFixture(page, role) {
     const makeUser=role=>({email:role+'@school.example',getIdToken:async()=>role});
     if(sessionStorage.getItem('fixture-initialised')===null){sessionStorage.setItem('fixture-initialised','1');sessionStorage.setItem('fixture-role',${role ? `'${role}'` : "''"});}
     const initial=sessionStorage.getItem('fixture-role');const auth={currentUser:initial ? makeUser(initial) : null};let listener;
-    export async function initFirebase(){return {auth,storage:{}};}
+    export async function initFirebase(){return {auth};}
     export function onAuthStateChanged(a,fn){listener=fn;queueMicrotask(()=>fn(a.currentUser));}
     export async function signInWithCustomToken(a,token){a.currentUser=makeUser(token);sessionStorage.setItem('fixture-role',token);listener?.(a.currentUser);return {user:a.currentUser};}
     export async function signOut(a){a.currentUser=null;sessionStorage.setItem('fixture-role','');listener?.(null);}
-    export function ref(s,path){return path;}
-    export function uploadBytesResumable(){return {on(event,progress,error,complete){progress({bytesTransferred:8,totalBytes:8});complete();}};}
   `,
     }),
   );
@@ -43,6 +41,11 @@ async function capturePage(page, path) {
 let scenarioIp = 10;
 test.beforeEach(async ({ page }) => {
   await page.setExtraHTTPHeaders({ 'X-Forwarded-For': `192.0.2.${scenarioIp++}` });
+  await page.route('https://api.cloudinary.com/v1_1/scmu-test/image/upload', (route) =>
+    route.fulfill({
+      json: { public_id: 'fixture-upload', secure_url: 'https://images.example/upload.jpg' },
+    }),
+  );
   await page.route('https://images.example/**', (route) =>
     route.fulfill({ path: 'public/assets/photos/classroom.jpg', contentType: 'image/jpeg' }),
   );
@@ -297,4 +300,59 @@ test('homepage special-event section has no hardcoded fallback when dashboard ev
   await expect(page.locator('#event-message')).toBeEmpty();
   await page.getByRole('button', { name: 'Event notifications' }).click();
   await expect(page.getByRole('dialog')).toContainText('No event notices yet');
+});
+
+test('Cloudinary upload failure keeps form content and a retry publishes successfully', async ({
+  page,
+}) => {
+  await staffFixture(page, 'student');
+  let attempts = 0;
+  await page.route('https://api.cloudinary.com/v1_1/scmu-test/image/upload', async (route) => {
+    const request = route.request();
+    expect(request.headers()['content-type']).toContain('multipart/form-data');
+    expect(request.postData()).toContain('fixture-signature');
+    expect(request.postData()).toContain('retry-photo.png');
+    attempts++;
+    await route.fulfill({
+      status: attempts === 1 ? 503 : 200,
+      json: attempts === 1 ? { error: { message: 'provider failed' } } : { public_id: 'uploaded' },
+    });
+  });
+  await page.goto('/admin/index.html');
+  await page.locator('#gallery-file').setInputFiles({
+    name: 'retry-photo.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+  });
+  await page.locator('#gallery-caption').fill('Cloudinary retry test');
+  await page.getByRole('button', { name: 'Publish photograph' }).click();
+  await expect(page.locator('#gallery-form .form-status')).toContainText(
+    'Cloudinary could not upload',
+  );
+  await expect(page.locator('#gallery-caption')).toHaveValue('Cloudinary retry test');
+  await page.getByRole('button', { name: 'Publish photograph' }).click();
+  await expect(page.locator('#gallery-form .form-status')).toContainText('Saved successfully');
+  await expect(page.locator('#admin-gallery-grid')).toContainText('Cloudinary retry test');
+  expect(attempts).toBe(2);
+});
+
+test('larger Sinhala hero heading fits narrow phones, tablets and desktop screens', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Got it', exact: true }).click();
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+      .toBeLessThanOrEqual(width);
+    const bounds = await page
+      .locator('#hero-title')
+      .evaluate((node) => ({ content: node.scrollWidth, available: node.clientWidth }));
+    expect(bounds.content).toBeLessThanOrEqual(bounds.available);
+  }
+  await page.locator('.hero').screenshot({ path: 'test-results/hero-larger-desktop.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.hero').screenshot({ path: 'test-results/hero-larger-mobile.png' });
 });
