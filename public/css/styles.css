@@ -1317,18 +1317,22 @@ textarea {
   text-align: center;
   padding: 24px;
 }
-.spinner {
-  width: 35px;
-  height: 35px;
-  border: 3px solid #d8dfe8;
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
+.loading-logo {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin: 0 auto 16px;
 }
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@media (prefers-reduced-motion: no-preference) {
+  .loading-logo {
+    animation: logo-pulse 1.6s ease-in-out infinite;
+  }
+}
+@keyframes logo-pulse {
+  50% {
+    opacity: 0.65;
+    transform: scale(0.96);
   }
 }
 .dashboard {
@@ -2325,9 +2329,6 @@ progress {
   *:after {
     animation-duration: 0.01ms !important;
     transition-duration: 0s !important;
-  }
-  .spinner {
-    animation: none;
   }
 }
 

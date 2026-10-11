@@ -476,3 +476,242 @@ test('mobile Student drop upload publishes through Cloudinary and locks selectio
   await expect(zone.locator('.upload-preview')).toBeHidden();
   await expect(zone.locator('.upload-selection')).toBeEmpty();
 });
+
+test('staff access loading shows the favicon and respects reduced motion', async ({ page }) => {
+  await staffFixture(page, 'student');
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/admin/me', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/admin/index.html');
+  try {
+    const logo = page.locator('#auth-loading .loading-logo');
+    await expect(logo).toHaveAttribute('src', '/assets/favicon.svg');
+    await expect.poll(() => logo.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
+    await expect(logo).toHaveCSS('width', '72px');
+    await expect(page.getByRole('status')).toContainText('Checking your staff access');
+    await expect(logo).toHaveCSS('animation-name', 'logo-pulse');
+    await page.screenshot({ path: 'test-results/favicon-loading-mobile.png', fullPage: true });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(logo).toHaveCSS('animation-name', 'none');
+  } finally {
+    release();
+  }
+  await expect(page.locator('#dashboard')).toBeVisible();
+});
+
+// Use real canvas-encoded images, rather than padded headers, to exercise the
+// browser decoder, compression, transparency and camera-orientation handling.
+async function selectLargePhoto(page, type, rotated = false) {
+  return page.locator('#gallery-file').evaluate(
+    async (input, { type, rotated }) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 3000;
+      canvas.height = 900;
+      const context = canvas.getContext('2d');
+      const pixels = context.createImageData(canvas.width, canvas.height);
+      let random = 17;
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        for (let channel = 0; channel < 3; channel++) {
+          random = (Math.imul(random, 1664525) + 1013904223) | 0;
+          pixels.data[i + channel] = random >>> 24;
+        }
+        pixels.data[i + 3] = type === 'image/png' && (i / 4) % canvas.width < 300 ? 0 : 255;
+      }
+      context.putImageData(pixels, 0, 0);
+      let blob = await new Promise((resolve) => canvas.toBlob(resolve, type, 0.98));
+      if (rotated) {
+        // EXIF orientation 6: a phone photo that should display in portrait.
+        const jpeg = new Uint8Array(await blob.arrayBuffer());
+        const exif = new Uint8Array([
+          0xff, 0xe1, 0x00, 0x22, 0x45, 0x78, 0x69, 0x66, 0, 0, 0x49, 0x49, 0x2a, 0, 8, 0, 0, 0, 1,
+          0, 0x12, 0x01, 3, 0, 1, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0,
+        ]);
+        blob = new Blob([jpeg.slice(0, 2), exif, jpeg.slice(2)], { type });
+      }
+      const transfer = new DataTransfer();
+      transfer.items.add(
+        new File([blob], type === 'image/png' ? 'large.png' : 'phone.jpg', { type }),
+      );
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      canvas.width = canvas.height = 0;
+      return blob.size;
+    },
+    { type, rotated },
+  );
+}
+
+function multipartFile(request) {
+  const boundary = request.headers()['content-type'].match(/boundary=([^;]+)/)[1];
+  const body = request.postDataBuffer();
+  const headerStart = body.indexOf(Buffer.from('name="file";'));
+  expect(headerStart).toBeGreaterThanOrEqual(0);
+  const start = body.indexOf(Buffer.from('\r\n\r\n'), headerStart) + 4;
+  const end = body.indexOf(Buffer.from(`\r\n--${boundary}`), start);
+  expect(end).toBeGreaterThan(start);
+  const headers = body.subarray(headerStart, start).toString();
+  return {
+    name: headers.match(/filename="([^"]+)"/)[1],
+    type: headers.match(/Content-Type: ([^\r]+)/)[1],
+    bytes: body.subarray(start, end),
+  };
+}
+
+for (const type of ['image/png', 'image/jpeg'])
+  test(`large ${type} upload reduces bytes, matches its permit and preserves image properties`, async ({
+    page,
+  }) => {
+    await staffFixture(page, 'student');
+    const tickets = [],
+      uploads = [];
+    await page.route('**/api/uploads/ticket', async (route) => {
+      tickets.push(route.request().postDataJSON());
+      await route.continue();
+    });
+    await page.route('https://api.cloudinary.com/v1_1/scmu-test/image/upload', async (route) => {
+      const file = multipartFile(route.request());
+      uploads.push(file);
+      expect(file.type).toBe(tickets.at(-1).contentType);
+      expect(file.bytes.length).toBe(tickets.at(-1).size);
+      expect(file.name).toMatch(/\.webp$/);
+      await route.fulfill({
+        status: type === 'image/jpeg' && uploads.length === 1 ? 503 : 200,
+        json: {},
+      });
+    });
+    await page.goto('/admin/index.html');
+    const originalSize = await selectLargePhoto(page, type, type === 'image/jpeg');
+    expect(originalSize).toBeGreaterThanOrEqual(512 * 1024);
+    expect(originalSize).toBeLessThan(10 * 1024 * 1024);
+    await page.evaluate(() => {
+      const decode = window.createImageBitmap;
+      window.preparationDecodes = 0;
+      window.createImageBitmap = (...args) => {
+        window.preparationDecodes++;
+        return decode(...args);
+      };
+    });
+    await page.locator('#gallery-caption').fill(`Prepared ${type} photograph`);
+    await page.getByRole('button', { name: 'Publish photograph' }).click();
+    if (type === 'image/jpeg') {
+      await expect(page.locator('#gallery-form .form-status')).toContainText(
+        'Cloudinary could not upload',
+      );
+      await page.getByRole('button', { name: 'Publish photograph' }).click();
+    }
+    await expect(page.locator('#gallery-form .form-status')).toContainText('Saved successfully');
+    await expect(page.locator('#admin-gallery-grid')).toContainText(`Prepared ${type} photograph`);
+    expect(uploads[0].bytes.length).toBeLessThan(originalSize * 0.9);
+    expect(await page.evaluate(() => window.preparationDecodes)).toBe(1);
+    if (type === 'image/jpeg') expect(uploads[0].bytes.equals(uploads[1].bytes)).toBe(true);
+    const image = await page.evaluate(async (base64) => {
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/webp' }));
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d');
+      context.drawImage(bitmap, 0, 0);
+      const result = {
+        width: bitmap.width,
+        height: bitmap.height,
+        alpha: context.getImageData(0, 0, 1, 1).data[3],
+      };
+      bitmap.close();
+      return result;
+    }, uploads[0].bytes.toString('base64'));
+    expect([image.width, image.height]).toEqual(type === 'image/png' ? [2400, 720] : [720, 2400]);
+    expect(image.alpha).toBe(type === 'image/png' ? 0 : 255);
+  });
+
+test('image preparation preserves small/animated formats and falls back safely on limited browsers', async ({
+  page,
+}) => {
+  await staffFixture(page, 'student');
+  await page.goto('/admin/index.html');
+  await selectLargePhoto(page, 'image/png');
+  const results = await page.evaluate(async () => {
+    const { prepareImage } = await import('/js/image-preparation.js');
+    const file = document.querySelector('#gallery-file').files[0];
+    const animation = Uint8Array.from(
+      atob(
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAACGFjVEwAAAACAAAAAPONk3AAAAAaZmNUTAAAAAAAAAACAAAAAgAAAAAAAAAAAAEACgAA6FTcAAAAABRJREFUeJxj/M/A8J+BgYGBiQEKAB8XAgJPlM6+AAAAGmZjVEwAAAABAAAAAgAAAAIAAAAAAAAAAAABAAoAAHMnNtQAAAAYZmRBVAAAAAJ4nGNkYPj/n4GBgYGJAQoAHRkCAunm7jEAAAAASUVORK5CYII=',
+      ),
+      (c) => c.charCodeAt(0),
+    );
+    const originals = [
+      new File([new Uint8Array(100)], 'small.png', { type: 'image/png' }),
+      new File([new Uint8Array(600_000)], 'animated.gif', { type: 'image/gif' }),
+      new File([new Uint8Array(600_000)], 'animated.webp', { type: 'image/webp' }),
+      new File([animation, new Uint8Array(600_000)], 'animated.png', { type: 'image/png' }),
+      new File([new Uint8Array(600_000)], 'invalid.jpg', { type: 'image/jpeg' }),
+    ];
+    const preserved = [];
+    for (const original of originals) preserved.push((await prepareImage(original)) === original);
+    const decode = window.createImageBitmap;
+    let fallbackSmaller, failedEncoderOriginal;
+    try {
+      window.createImageBitmap = undefined;
+      fallbackSmaller = (await prepareImage(file)).size < file.size * 0.9;
+    } finally {
+      window.createImageBitmap = decode;
+    }
+    const encode = HTMLCanvasElement.prototype.toBlob;
+    try {
+      HTMLCanvasElement.prototype.toBlob = function (callback) {
+        callback(null);
+      };
+      failedEncoderOriginal = (await prepareImage(file)) === file;
+    } finally {
+      HTMLCanvasElement.prototype.toBlob = encode;
+    }
+    return { preserved, fallbackSmaller, failedEncoderOriginal };
+  });
+  expect(results).toEqual({
+    preserved: [true, true, true, true, true],
+    fallbackSmaller: true,
+    failedEncoderOriginal: true,
+  });
+});
+
+test('successful publishing starts list and count refreshes concurrently', async ({ page }) => {
+  await staffFixture(page, 'student');
+  await page.goto('/admin/index.html');
+  await expect
+    .poll(() => page.locator('#admin-gallery-grid .admin-content-card').count())
+    .toBeGreaterThan(0);
+  await expect(page.locator('#stats .stat-card')).toHaveCount(2);
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let listStarted = false,
+    countsStarted = false;
+  await page.route('**/api/gallery?*', async (route) => {
+    listStarted = true;
+    await gate;
+    await route.continue();
+  });
+  await page.route('**/api/admin/stats', async (route) => {
+    countsStarted = true;
+    await gate;
+    await route.continue();
+  });
+  await page.locator('#gallery-url').fill('https://images.example/parallel.jpg');
+  await page.locator('#gallery-caption').fill('Parallel refresh');
+  await page.getByRole('button', { name: 'Publish photograph' }).click();
+  try {
+    await expect.poll(() => listStarted && countsStarted).toBe(true);
+    await expect(page.locator('#gallery-form .form-status')).toContainText('Saved successfully');
+  } finally {
+    release();
+  }
+  await expect(page.locator('#admin-gallery-grid')).toContainText('Parallel refresh');
+  await expect(page.getByRole('button', { name: 'Publish photograph' })).toBeEnabled();
+});
