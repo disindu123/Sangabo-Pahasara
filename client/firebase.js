@@ -7,7 +7,6 @@ import {
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 let instance;
 export async function initFirebase(config) {
   if (!config) throw new Error('SCMU staff login is being configured.');
@@ -15,7 +14,7 @@ export async function initFirebase(config) {
   const app = getApps()[0] || initializeApp(config),
     auth = getAuth(app);
   await setPersistence(auth, browserSessionPersistence);
-  instance = { auth, storage: config.storageBucket ? getStorage(app) : null };
+  instance = { auth };
   return instance;
 }
-export { signInWithCustomToken, signOut, onAuthStateChanged, ref, uploadBytesResumable };
+export { signInWithCustomToken, signOut, onAuthStateChanged };

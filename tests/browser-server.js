@@ -63,7 +63,7 @@ const photos = {
   destroy: async () => {},
   ticket: async (collection, uid, contentType, size) => {
     const ticketId = randomUUID(),
-      storagePath = `uploads/${collection}/${uid}/${ticketId}.png`;
+      storagePath = `cloudinary/scmu/${collection}/${uid}/${ticketId}`;
     await db
       .collection('_uploads')
       .doc(ticketId)
@@ -76,7 +76,19 @@ const photos = {
         consumed: false,
         expiresAt: Timestamp.fromMillis(Date.now() + 30_000),
       });
-    return { ticketId, storagePath };
+    return {
+      ticketId,
+      provider: 'cloudinary',
+      uploadUrl: 'https://api.cloudinary.com/v1_1/scmu-test/image/upload',
+      fields: {
+        public_id: storagePath,
+        timestamp: 1,
+        signature: 'fixture-signature',
+        api_key: 'fixture-key',
+        overwrite: 'false',
+        allowed_formats: 'jpg,png,webp,gif',
+      },
+    };
   },
   inspect: async (ticketId) => ({
     imageUrl: 'https://images.example/upload.jpg',

@@ -2,11 +2,7 @@ import { before, after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import {
-  initializeTestEnvironment,
-  assertFails,
-  assertSucceeds,
-} from '@firebase/rules-unit-testing';
+import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { FirebaseStore } from '../lib/store.js';
@@ -62,9 +58,9 @@ test('Firestore denies all direct client reads/writes, including privileged clai
     );
   }
 });
-test('valid role, UID and expiring upload permit allow direct Storage creation only', async () => {
+test('retired Firebase Storage rejects creation even with a valid role and upload permit', async () => {
   const path = await permit('student');
-  await assertSucceeds(put('student', path));
+  await assertFails(put('student', path));
   const file = env.authenticatedContext('student').storage().ref(path);
   await assertFails(file.getDownloadURL());
   await assertFails(file.delete());
@@ -96,12 +92,12 @@ test('Storage rejects anonymous uploads, forged claims, another owner, missing/e
       .put(new Uint8Array(8), { contentType: 'image/png' }),
   );
 });
-test('Storage roles and demotion apply immediately without relying on stale custom claims', async () => {
+test('all staff roles are denied Firebase Storage uploads after moving to Cloudinary', async () => {
   await assertFails(put('student', await permit('student', 'slider')));
-  await assertSucceeds(put('teacher', await permit('teacher', 'slider')));
-  await assertSucceeds(put('teacher', await permit('teacher', 'popups')));
-  await assertSucceeds(put('student', await permit('student', 'popups')));
-  await assertSucceeds(put('admin', await permit('admin', 'mediaHeads')));
+  await assertFails(put('teacher', await permit('teacher', 'slider')));
+  await assertFails(put('teacher', await permit('teacher', 'popups')));
+  await assertFails(put('student', await permit('student', 'popups')));
+  await assertFails(put('admin', await permit('admin', 'mediaHeads')));
   await db.collection('users').doc('teacher').update({ role: 'student' });
   await assertFails(put('teacher', await permit('teacher', 'slider')));
   await db.collection('users').doc('teacher').update({ role: 'teacher', disabled: true });
