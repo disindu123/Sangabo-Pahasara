@@ -494,6 +494,16 @@ test('staff access loading shows the favicon and respects reduced motion', async
     await expect(logo).toHaveAttribute('src', '/assets/favicon.svg');
     await expect.poll(() => logo.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
     await expect(logo).toHaveCSS('width', '72px');
+    for (const width of [390, 995, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      const centers = await logo.evaluate((image) => {
+        const icon = image.getBoundingClientRect();
+        const container = image.parentElement.getBoundingClientRect();
+        return { icon: icon.x + icon.width / 2, container: container.x + container.width / 2 };
+      });
+      expect(Math.abs(centers.icon - centers.container)).toBeLessThan(1);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole('status')).toContainText('Checking your staff access');
     await expect(logo).toHaveCSS('animation-name', 'logo-pulse');
     await page.screenshot({ path: 'test-results/favicon-loading-mobile.png', fullPage: true });
