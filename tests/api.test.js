@@ -322,6 +322,16 @@ test('security headers, cache controls, body bounds and environment-file isolati
   const home = await fetch(origin);
   assert.ok(home.headers.get('content-security-policy').includes("script-src 'self'"));
   assert.equal(home.headers.get('cache-control'), 'no-store');
+  const stylesheet = await fetch(`${origin}/css/styles.css?v=20261011-loading-center`);
+  assert.equal(stylesheet.headers.get('cache-control'), 'no-cache');
+  const cached = await fetch(`${origin}/css/styles.css?v=20261011-loading-center`, {
+    headers: {
+      'If-None-Match': stylesheet.headers.get('etag'),
+      'Cache-Control': 'max-age=0',
+    },
+  });
+  assert.equal(cached.status, 304);
+  assert.equal((await fetch(`${origin}/js/admin.js`)).headers.get('cache-control'), 'no-cache');
   assert.equal((await fetch(`${origin}/.env`)).status, 404);
   assert.equal(
     (
