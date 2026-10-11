@@ -104,8 +104,7 @@ async function remove(key, item) {
   await staffApi(`/api/${paths[key]}/${encodeURIComponent(key === 'ips' ? item.ip : item.id)}`, {
     method: 'DELETE',
   });
-  await load(key, true);
-  await stats();
+  await Promise.all([load(key, true), stats()]);
   setStatus(
     $('#admin-status'),
     key === 'ips' ? 'Staff access unblocked.' : 'Item removed.',
@@ -386,10 +385,16 @@ async function imageBody(key, form, data, collection = key) {
     if (!form.dataset.ticketId) {
       const progress = $(`#${collection}-progress`);
       progress.hidden = false;
-      progress.value = 0;
-      form.dataset.ticketId = await uploadPhoto(staffApi, collection, file, (value) => {
-        progress.value = value;
-      });
+      progress.removeAttribute('value');
+      form.dataset.ticketId = await uploadPhoto(
+        staffApi,
+        collection,
+        file,
+        (value) => {
+          progress.value = value;
+        },
+        (message) => setStatus(form.querySelector('.form-status'), message),
+      );
     }
     return { ticketId: form.dataset.ticketId };
   }
@@ -460,8 +465,10 @@ function setupForms() {
         await staffApi(path, { method, body });
         if (!['live', 'settings'].includes(key)) resetEditor(key);
         setStatus(status, 'Saved successfully.', 'success');
-        if (!['live', 'settings'].includes(key)) await load(key, true);
-        await stats();
+        await Promise.all([
+          ...(!['live', 'settings'].includes(key) ? [load(key, true)] : []),
+          stats(),
+        ]);
       } catch (e) {
         setStatus(status, e.message, 'error');
       } finally {

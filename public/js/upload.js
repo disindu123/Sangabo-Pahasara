@@ -1,3 +1,8 @@
+import { prepareImage } from './image-preparation.js';
+
+// Reuse preparation on retry without retaining files after the selection is gone.
+const preparedPhotos = new WeakMap();
+
 export function validateImage(file) {
   if (
     !file ||
@@ -8,11 +13,21 @@ export function validateImage(file) {
     throw new Error('Choose a JPG, PNG, WebP or GIF smaller than 10 MB.');
 }
 
-export async function uploadPhoto(staffApi, collection, file, onProgress = () => {}) {
+export async function uploadPhoto(
+  staffApi,
+  collection,
+  file,
+  onProgress = () => {},
+  onStatus = () => {},
+) {
   validateImage(file);
+  onStatus('Preparing image…');
+  if (!preparedPhotos.has(file)) preparedPhotos.set(file, prepareImage(file));
+  const uploadFile = await preparedPhotos.get(file);
+  onStatus('Starting upload…');
   const ticket = await staffApi('/api/uploads/ticket', {
     method: 'POST',
-    body: { collection, contentType: file.type, size: file.size },
+    body: { collection, contentType: uploadFile.type, size: uploadFile.size },
   });
   if (
     ticket.provider !== 'cloudinary' ||
@@ -21,7 +36,8 @@ export async function uploadPhoto(staffApi, collection, file, onProgress = () =>
     throw new Error('Cloudinary uploads are being configured.');
   const body = new FormData();
   for (const [key, value] of Object.entries(ticket.fields)) body.append(key, String(value));
-  body.append('file', file);
+  body.append('file', uploadFile);
+  onStatus('Uploading image…');
   onProgress(0);
   await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -45,6 +61,7 @@ export async function uploadPhoto(staffApi, collection, file, onProgress = () =>
     xhr.ontimeout = () => reject(new Error('The photo upload timed out. Please retry.'));
     xhr.send(body);
   });
+  onStatus('Publishing image…');
   // The server rechecks ownership, expiry, actual format and bytes before publishing.
   return ticket.ticketId;
 }
