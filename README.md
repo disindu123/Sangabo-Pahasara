@@ -93,7 +93,7 @@ It is a trusted operator tool, not a public endpoint. The dashboard prevents sel
 ## 2. Add official content
 
 1. Sign in as Admin. Add the five board positions, authorised photos and optional contacts.
-2. Add gallery photos by **file or HTTPS URL**, with an optional caption, album title and exact Facebook album link. Uploads accept JPEG/PNG/WebP/GIF up to 10 MB. SVG files are deliberately excluded.
+2. Add gallery photos by **drag and drop, file picker or HTTPS URL**, with an optional caption, album title and exact Facebook album link. Uploads accept JPEG/PNG/WebP/GIF up to 10 MB. SVG files are deliberately excluded.
 3. Add **5–7 homepage slides**, with order numbers. The supplied local education photos are clearly marked as illustrative until replaced; they are not representations of real SCMU events. Optional `npm run seed:slider` copies the six illustrative photos into Cloudinary and Firestore only if the slider is empty.
 4. Fill `SOCIAL_FACEBOOK`, `SOCIAL_TIKTOK` and `SOCIAL_INSTAGRAM` in the host environment. Unknown links are disabled, rather than guessed. The supplied YouTube channel is already set. Confirm `SCHOOL_WEBSITE` and replace the existing landscape `public/assets/scmu-logo.svg` with the approved logo or set `LOGO_URL`.
 5. Publish event notices and live broadcasts only when ready. All staff roles can publish events with an image upload or URL. The newest event replaces the homepage special-event content; only Admins can edit or delete notices. A new event ID is shown once on that browser; cleared local storage or another device can show it again. The homepage special-event section stays hidden until a dashboard event is published; its title, description and optional photo come entirely from that event.
@@ -221,3 +221,5 @@ API/unit tests inject test-only services and cover role restrictions, privacy, v
 Before a public launch, verify actual credentials, Cloudinary uploads/deletion, Firestore IAM/rules, Firebase Auth and the host’s forwarded IP behavior on a staging deployment. The source is deployment-ready, but no live Firebase project is configured by these files.
 
 Navigation uses a moving underline for hover and keyboard focus. Subtle scroll, button, card and dialog transitions respect `prefers-reduced-motion`; content stays visible without JavaScript.
+
+All dashboard image controls (gallery, slider, special events and head board) support dragging one image onto the upload area. They show a local preview and filename, support removing/replacing a selection, and reject unsupported or oversized files before uploading. The keyboard-accessible native picker remains available on mobile. Files are uploaded to Cloudinary when you submit the form.

@@ -1,6 +1,7 @@
 import { api, getConfig, icon, safeImage, setStatus } from './common.js';
 import { initFirebase, onAuthStateChanged, signOut } from './firebase.bundle.js';
 import { uploadPhoto } from './upload.js';
+import { setupDropUpload } from './drop-upload.js';
 
 const $ = (selector) => document.querySelector(selector);
 const forms = Object.fromEntries(
@@ -397,6 +398,7 @@ async function imageBody(key, form, data, collection = key) {
 function setupForms() {
   for (const [key, form] of Object.entries(forms)) {
     form.elements.file?.addEventListener('change', () => delete form.dataset.ticketId);
+    setupDropUpload(form.elements.file);
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!form.reportValidity() || form.dataset.busy) return;
