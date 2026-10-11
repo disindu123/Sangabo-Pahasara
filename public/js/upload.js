@@ -1,4 +1,4 @@
-export async function uploadPhoto(staffApi, collection, file, onProgress = () => {}) {
+export function validateImage(file) {
   if (
     !file ||
     !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) ||
@@ -6,6 +6,10 @@ export async function uploadPhoto(staffApi, collection, file, onProgress = () =>
     file.size > 10 * 1024 * 1024
   )
     throw new Error('Choose a JPG, PNG, WebP or GIF smaller than 10 MB.');
+}
+
+export async function uploadPhoto(staffApi, collection, file, onProgress = () => {}) {
+  validateImage(file);
   const ticket = await staffApi('/api/uploads/ticket', {
     method: 'POST',
     body: { collection, contentType: file.type, size: file.size },

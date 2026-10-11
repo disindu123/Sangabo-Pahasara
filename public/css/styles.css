@@ -2955,3 +2955,84 @@ progress {
     display: none;
   }
 }
+
+/* File picker remains keyboard-accessible; drag and drop is an enhancement. */
+.upload-dropzone {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 22px;
+  border: 2px dashed #d7c397;
+  border-radius: 14px;
+  background: #fffcf6;
+}
+.upload-drop-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--navy);
+}
+.upload-drop-hint {
+  margin: 0;
+  color: var(--body);
+  font-size: 0.78rem;
+}
+.upload-dropzone input[type='file'] {
+  max-width: 100%;
+  min-width: 0;
+  font-size: 0.8rem;
+  background: #fff;
+}
+.upload-dropzone input::file-selector-button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 5px;
+  padding: 8px 10px;
+  background: var(--navy);
+  color: #fff;
+  margin-right: 10px;
+}
+.upload-dropzone:focus-within {
+  border-color: var(--navy);
+}
+.upload-dropzone.is-dragging {
+  border-color: var(--gold);
+  background: #fff4d8;
+  box-shadow: 0 0 0 4px rgb(194 153 68 / 12%);
+}
+.upload-dropzone[aria-disabled='true'] {
+  opacity: 0.6;
+}
+.upload-preview {
+  width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+}
+.upload-selection {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+.upload-error {
+  color: #a12a2a;
+}
+.upload-clear {
+  justify-self: start;
+  font-size: 0.75rem;
+  padding: 9px 12px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .upload-dropzone {
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+}
+@media (max-width: 680px) {
+  .upload-dropzone {
+    padding: 16px;
+  }
+}

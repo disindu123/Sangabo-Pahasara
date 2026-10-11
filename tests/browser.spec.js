@@ -356,3 +356,123 @@ test('larger Sinhala hero heading fits narrow phones, tablets and desktop screen
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.hero').screenshot({ path: 'test-results/hero-larger-mobile.png' });
 });
+
+async function dropFiles(page, inputId, files) {
+  await page.locator(`#${inputId}`).evaluate((input, values) => {
+    const transfer = new DataTransfer();
+    for (const file of values) {
+      const bytes = file.size
+        ? new Uint8Array(file.size)
+        : Uint8Array.from(
+            atob(
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jS1cAAAAASUVORK5CYII=',
+            ),
+            (c) => c.charCodeAt(0),
+          );
+      transfer.items.add(new File([bytes], file.name, { type: file.type }));
+    }
+    input
+      .closest('.upload-dropzone')
+      .dispatchEvent(
+        new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer }),
+      );
+  }, files);
+}
+
+test('all four dashboard image controls support drop previews, clearing and the native picker', async ({
+  page,
+}) => {
+  await staffFixture(page, 'admin');
+  await page.goto('/admin/index.html');
+  for (const [tab, inputId] of [
+    ['Gallery', 'gallery-file'],
+    ['Image slider', 'slider-file'],
+    ['Events', 'popup-file'],
+    ['Head board', 'head-file'],
+  ]) {
+    await page.getByRole('tab', { name: tab, exact: true }).click();
+    const zone = page.locator(`#${inputId}`).locator('..');
+    await dropFiles(page, inputId, [{ name: 'preview.png', type: 'image/png' }]);
+    await expect(zone.locator('.upload-selection')).toContainText('preview.png');
+    await expect(zone.locator('.upload-preview')).toBeVisible();
+    await expect
+      .poll(() => zone.locator('.upload-preview').evaluate((image) => image.naturalWidth))
+      .toBeGreaterThan(0);
+    await zone.getByRole('button', { name: 'Remove selected image' }).click();
+    await expect(zone.locator('.upload-preview')).toBeHidden();
+    expect(await page.locator(`#${inputId}`).evaluate((input) => input.files.length)).toBe(0);
+    await page.locator(`#${inputId}`).focus();
+    await expect(page.locator(`#${inputId}`)).toBeFocused();
+  }
+  await page.getByRole('tab', { name: 'Events', exact: true }).click();
+  await page
+    .locator('#popup-list')
+    .getByRole('button', { name: 'Edit text', exact: true })
+    .first()
+    .click();
+  await expect(page.locator('#popup-file')).toBeDisabled();
+  await dropFiles(page, 'popup-file', [{ name: 'blocked.png', type: 'image/png' }]);
+  expect(await page.locator('#popup-file').evaluate((input) => input.files.length)).toBe(0);
+});
+
+test('drop areas reject unsupported, oversized and multiple files without requesting uploads', async ({
+  page,
+}) => {
+  await staffFixture(page, 'student');
+  await page.goto('/admin/index.html');
+  const zone = page.locator('#gallery-file').locator('..');
+  for (const [files, message] of [
+    [[{ name: 'unsafe.svg', type: 'image/svg+xml' }], 'Choose a JPG'],
+    [[{ name: 'large.png', type: 'image/png', size: 10 * 1024 * 1024 + 1 }], 'Choose a JPG'],
+    [
+      [
+        { name: 'one.png', type: 'image/png' },
+        { name: 'two.png', type: 'image/png' },
+      ],
+      'Drop one image',
+    ],
+  ]) {
+    await dropFiles(page, 'gallery-file', files);
+    await expect(zone.locator('.upload-selection')).toContainText(message);
+    expect(await page.locator('#gallery-file').evaluate((input) => input.files.length)).toBe(0);
+  }
+  await page.locator('#gallery-file').setInputFiles({
+    name: 'unsafe.svg',
+    mimeType: 'image/svg+xml',
+    buffer: Buffer.from('<svg/>'),
+  });
+  await expect(zone.locator('.upload-selection')).toContainText('Choose a JPG');
+  expect(await page.locator('#gallery-file').evaluate((input) => input.files.length)).toBe(0);
+});
+
+test('mobile Student drop upload publishes through Cloudinary and locks selection during upload', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await staffFixture(page, 'student');
+  let release;
+  const uploading = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('https://api.cloudinary.com/v1_1/scmu-test/image/upload', async (route) => {
+    await uploading;
+    await route.fulfill({ json: { public_id: 'fixture-upload' } });
+  });
+  await page.goto('/admin/index.html');
+  const zone = page.locator('#gallery-file').locator('..');
+  await dropFiles(page, 'gallery-file', [{ name: 'dropped.png', type: 'image/png' }]);
+  await page.locator('#gallery-caption').fill('Published by drag and drop');
+  await zone.screenshot({ path: 'test-results/drop-upload-mobile.png' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.getByRole('button', { name: 'Publish photograph' }).click();
+  await expect(zone).toHaveAttribute('aria-disabled', 'true');
+  await dropFiles(page, 'gallery-file', [{ name: 'replacement.png', type: 'image/png' }]);
+  expect(await page.locator('#gallery-file').evaluate((input) => input.files[0].name)).toBe(
+    'dropped.png',
+  );
+  release();
+  await expect(page.locator('#gallery-form .form-status')).toContainText('Saved successfully');
+  await expect(page.locator('#admin-gallery-grid')).toContainText('Published by drag and drop');
+  await expect(zone.locator('.upload-preview')).toBeHidden();
+  await expect(zone.locator('.upload-selection')).toBeEmpty();
+});
