@@ -366,7 +366,10 @@ async function setupNotifications() {
     dismiss.className = 'button button-primary';
     dismiss.textContent = 'Got it';
     dismiss.addEventListener('click', () => popup.close());
-    popup.append(dismiss);
+    const actions = document.createElement('div');
+    actions.className = 'event-actions';
+    actions.append(dismiss);
+    popup.append(actions);
     popup.addEventListener('close', () => {
       try {
         localStorage.setItem(key, 'seen');

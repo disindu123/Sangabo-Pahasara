@@ -1,4 +1,10 @@
-import { api, setupCommon, starterPhotos, safeImage, photoCard } from './common.js';
+import {
+  api,
+  setupCommon,
+  starterPhotos,
+  safeImage,
+  photoCard,
+} from './common.js?v=20261011-event-footer';
 setupCommon();
 
 async function setupSlider() {

@@ -1,4 +1,11 @@
-import { api, setupCommon, starterPhotos, photoCard, safeImage, setStatus } from './common.js';
+import {
+  api,
+  setupCommon,
+  starterPhotos,
+  photoCard,
+  safeImage,
+  setStatus,
+} from './common.js?v=20261011-event-footer';
 setupCommon();
 const grid = document.querySelector('#gallery-grid');
 const loadMore = document.querySelector('#load-more');
