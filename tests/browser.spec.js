@@ -56,7 +56,7 @@ test.beforeEach(async ({ page }) => {
     }),
   );
 });
-test('desktop home retains Sinhala/gold design, six slides, events, live and board', async ({
+test('desktop home shows the Sinhala identity, six slides, events, live and board', async ({
   page,
 }) => {
   const errors = [];
@@ -69,6 +69,7 @@ test('desktop home retains Sinhala/gold design, six slides, events, live and boa
   await expect(page.locator('.slide')).toHaveCount(6);
   await page.getByRole('button', { name: 'Next slide', exact: true }).click();
   await expect(page.locator('#slide-count')).toHaveText('02 / 06');
+  await expect(page.locator('#slide-caption')).toHaveText('Learning at school');
   await page.getByRole('button', { name: 'Pause slideshow' }).click();
   await expect(page.getByRole('button', { name: 'Play slideshow' })).toBeVisible();
   await expect(page.locator('#event-title')).toHaveText('SCMU special event');
@@ -286,6 +287,13 @@ test('navigation underline follows hover and focus; reduced motion keeps section
   expect(
     await page.locator('#navigation').evaluate((node) => getComputedStyle(node).position),
   ).toBe('absolute');
+  await page.setViewportSize({ width: 801, height: 844 });
+  await expect(page.locator('.menu-toggle')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#navigation')).toHaveCSS('position', 'relative');
+  await page.setViewportSize({ width: 768, height: 844 });
+  await expect(page.locator('#navigation')).toBeHidden();
+  await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+  await expect(page.locator('#navigation')).toBeVisible();
 });
 
 test('homepage special-event section has no hardcoded fallback when dashboard events are empty', async ({
@@ -336,9 +344,7 @@ test('Cloudinary upload failure keeps form content and a retry publishes success
   expect(attempts).toBe(2);
 });
 
-test('larger Sinhala hero heading fits narrow phones, tablets and desktop screens', async ({
-  page,
-}) => {
+test('Sinhala hero heading fits narrow phones, tablets and desktop screens', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.getByRole('button', { name: 'Got it', exact: true }).click();

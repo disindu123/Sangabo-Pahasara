@@ -1,4 +1,4 @@
-import { api, getConfig, icon, safeImage, setStatus } from './common.js';
+import { api, getConfig, icon, safeImage, setStatus } from './common.js?v=20261016-newsroom';
 import { initFirebase, onAuthStateChanged, signOut } from './firebase.bundle.js';
 import { uploadPhoto } from './upload.js';
 import { setupDropUpload } from './drop-upload.js';

@@ -1,10 +1,10 @@
 # සඟබෝ පැහැසර · Sanghabodhi College Media Unit
 
-The official SCMU website built on the original Teacher’s Day white, gold and deep-blue design. Node.js/Express serves HTML, CSS, vanilla JavaScript and the API; Firebase Authentication verifies staff credentials, Firestore stores content, and Cloudinary stores and delivers uploaded photographs.
+The official SCMU website, designed as a school media archive with off-white backgrounds, ink-blue typography and a restrained ochre accent. Node.js/Express serves HTML, CSS, vanilla JavaScript and the API; Firebase Authentication verifies staff credentials, Firestore stores content, and Cloudinary stores and delivers uploaded photographs.
 
 ## Included
 
-- Home: decorative Sinhala gold heading, six illustrative starter slides, autoplay, arrows, dots, pause, swipe, keyboard controls and reduced-motion support; introduction, highlights, gallery preview and a special-event section fully managed through the dashboard.
+- Home: readable Sinhala identity, a wide photo archive with captions, six illustrative starter slides, autoplay, arrows, dots, pause, swipe, keyboard controls and reduced-motion support; latest photographs, a concise introduction and a special-event section fully managed through the dashboard.
 - Gallery: paginated, lazy-loaded photographs, keyboard/swipe lightbox and albums grouped by their exact Facebook album URL. Each linked album has “View more on Facebook”.
 - Contact: configurable official social channels, YouTube, `sangabopahasara@gmail.com`, and a private feedback form with **Name and Message only**.
 - Head board: President, Secretary, V.President, V.Secretary and Treasurer, with optional photograph and WhatsApp/Facebook/LinkedIn/email SVG links. Empty positions stay hidden.
@@ -220,7 +220,7 @@ API/unit tests inject test-only services and cover role restrictions, privacy, v
 
 Before a public launch, verify actual credentials, Cloudinary uploads/deletion, Firestore IAM/rules, Firebase Auth and the host’s forwarded IP behavior on a staging deployment. The source is deployment-ready, but no live Firebase project is configured by these files.
 
-Navigation uses a moving underline for hover and keyboard focus. Subtle scroll, button, card and dialog transitions respect `prefers-reduced-motion`; content stays visible without JavaScript.
+Navigation uses a moving underline for hover and keyboard focus. Button feedback, slideshow fades and brief dialog transitions respect `prefers-reduced-motion`. Content remains visible without entrance effects or JavaScript. English uses the system sans-serif stack and Sinhala uses the existing self-hosted Noto Sans Sinhala font; the heading has no outline, gradient or glow. The default logo is the existing SCMU favicon, with the `LOGO_URL` override retained. Login, dashboard, maintenance and error screens share the same typography and spacing. All page entrypoints carry updated asset versions so older cached styles cannot hide the redesign.
 
 All dashboard image controls (gallery, slider, special events and head board) support dragging one image onto the upload area. They show a local preview and filename, support removing/replacing a selection, and reject unsupported or oversized files before uploading. The keyboard-accessible native picker remains available on mobile. Files are uploaded to Cloudinary when you submit the form.
 
