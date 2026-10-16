@@ -4,29 +4,26 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="google-site-verification" content="AtsEmfzuZrgE4Vn-cTUWcDhbHjfJ6oR-PoJ-EwF07UM" />
-    <title>සඟබෝ පැහැසර | SCMU</title>
+    <title>Home | සඟබෝ පැහැසර · SCMU</title>
     <meta
       name="description"
-      content="The official home of Sangabo Pahasara, Sanghabodhi College Media Unit. Campus stories, photographs, events and live broadcasts."
+      content="Official photographs, college events and updates from Sanghabodhi College Media Unit, Nittambuwa."
     />
-    <meta name="theme-color" content="#112e5a" />
+    <meta name="theme-color" content="#183247" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-
-    <link rel="stylesheet" href="/css/fonts.css" />
-    <link rel="stylesheet" href="/css/styles.css?v=20261011-event-footer" />
-    <script type="module" src="/js/home.js?v=20261011-event-footer"></script>
+    <link rel="stylesheet" href="/css/fonts.css?v=20261016-newsroom" />
+    <link rel="stylesheet" href="/css/styles.css?v=20261016-newsroom" />
+    <script type="module" src="/js/home.js?v=20261016-newsroom"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
       <div class="container header-inner">
         <a class="brand" href="/" aria-label="SCMU home"
-          ><img
-            src="/assets/scmu-logo.svg"
-            alt="Sanghabodhi College Media Unit"
-            width="240"
-            height="58"
-        /></a>
+          ><img src="/assets/favicon.svg" alt="" width="48" height="48" /><span class="brand-name"
+            >SCMU<span>Sanghabodhi College Media Unit</span></span
+          ></a
+        >
         <button
           class="menu-toggle icon-button"
           aria-label="Open menu"
@@ -39,34 +36,28 @@
           <a href="/" aria-current="page">Home</a><a href="/gallery">Gallery</a
           ><a href="/contact">Contact</a
           ><a class="admin-link" href="/login/index.html"
-            ><svg class="icon"><use href="/assets/icons.svg#lock"></use></svg> Admin Login</a
-          >
+            >Admin Login<svg class="icon"><use href="/assets/icons.svg#arrow-right"></use></svg
+          ></a>
         </nav>
       </div>
     </header>
     <main id="main">
       <section class="hero container" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="gold-line"></span> SANGHABODHI COLLEGE MEDIA UNIT</p>
-          <p class="school-name">Sri Sanghabodhi National College<br />Nittambuwa</p>
-          <h1 id="hero-title" class="sinhala-title" lang="si">
-            <span>"සඟබෝ</span> <span>පැහැසර"</span>
-          </h1>
-          <p class="hero-sinhala" lang="si">සඟබෝ හඬ ලොවට ගෙන යන,<br />අපේ මාධ්‍ය මෙහෙවර.</p>
-          <p class="hero-description">
-            The stories, achievements and everyday moments of Sanghabodhi College—captured with
-            care, shared with pride.
+        <div class="hero-heading">
+          <p class="eyebrow">Sanghabodhi College Media Unit</p>
+          <h1 id="hero-title" class="sinhala-title" lang="si">සඟබෝ පැහැසර</h1>
+          <p class="hero-school">Sri Sanghabodhi National College · Nittambuwa</p>
+        </div>
+        <div class="hero-intro">
+          <p>
+            Photographs, event coverage and updates from our school, published by the Sanghabodhi
+            College Media Unit.
           </p>
           <div class="button-row">
-            <a class="button button-primary" href="/gallery">View the gallery</a
-            ><a class="button button-outline" href="/contact">Get in touch</a>
-          </div>
-          <div class="hero-credit">
-            <svg class="icon"><use href="/assets/icons.svg#camera"></use></svg
-            ><span
-              >Stories brought to you by <strong>SCMU</strong
-              ><small>Media Unit of Sanghabodhi College</small></span
-            >
+            <a class="button button-primary" href="/gallery"
+              >View the gallery<svg class="icon">
+                <use href="/assets/icons.svg#arrow-right"></use></svg></a
+            ><a class="text-link" href="/contact">Contact SCMU</a>
           </div>
         </div>
         <div class="hero-visual">
@@ -82,8 +73,8 @@
               <div class="slider-track" id="slider-track"></div>
               <div class="slider-shade"></div>
               <div class="slider-caption">
-                <span class="photo-kicker">THROUGH THE SCMU LENS</span>
-                <p>Our school. Our stories.</p>
+                <span class="photo-kicker">School photo archive</span>
+                <p id="slide-caption">Photographs from SCMU</p>
               </div>
               <div class="slider-arrows">
                 <button class="icon-button slider-prev" aria-label="Previous slide">
@@ -93,12 +84,9 @@
                 </button>
               </div>
             </div>
-            <div class="visual-seal">
-              <svg class="icon"><use href="/assets/icons.svg#book"></use></svg
-              ><span>Guiding minds.<br /><strong>Inspiring lives.</strong></span>
-            </div>
           </div>
           <div class="slider-bottom">
+            <span class="slider-label">Sanghabodhi, in photographs</span>
             <div class="slider-dots" id="slider-dots" aria-label="Choose a slide"></div>
             <span class="slide-count" id="slide-count">01 / 06</span
             ><button class="icon-button" id="slider-pause" aria-label="Pause slideshow">
@@ -106,91 +94,66 @@
             </button>
           </div>
           <p class="starter-label" id="starter-label" hidden>
-            Illustrative education photos · official SCMU photographs coming soon
+            Illustrative photographs. Official SCMU images will appear here when published.
           </p>
         </div>
       </section>
-      <div class="tribute-ribbon">
-        <div class="container">
-          <span lang="si">සඟබෝ මතකයන් සදා රැඳෙන මාධ්‍ය ඇස</span
-          ><span>Capturing moments. Connecting our community.</span>
-        </div>
-      </div>
-      <section class="section container introduction" aria-labelledby="intro-title">
-        <div>
-          <p class="eyebrow">THE VOICE OF OUR COLLEGE.</p>
-          <h2 id="intro-title">Every story deserves<br /><em>to be seen.</em></h2>
-        </div>
-        <div class="intro-body">
-          <p class="sinhala-copy" lang="si">
-            ශ්‍රී සංඝබෝධි විද්‍යාලයේ මතකයන්, ජයග්‍රහණ සහ නිර්මාණශීලී හඬ ඔබ වෙත ගෙන එන අපේ මාධ්‍ය
-            ඒකකය.
-          </p>
-          <p>
-            We are the Media Unit of Sanghabodhi College, Nittambuwa. From photography and video to
-            event coverage and student voices, <strong>SCMU</strong> brings our college community
-            together through thoughtful storytelling.
-          </p>
-        </div>
-      </section>
-      <section class="highlights-section" aria-labelledby="highlights-title">
-        <div class="container section">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">CREATIVITY. COMMUNITY. CARE.</p>
-              <h2 id="highlights-title">A school alive with <em>stories.</em></h2>
-            </div>
-            <p>Student voices. Shared achievements.<br />Memories that belong to all of us.</p>
-          </div>
-          <div class="highlight-grid">
-            <article class="highlight-card">
-              <div class="card-top">
-                <span>01</span><svg class="icon"><use href="/assets/icons.svg#book"></use></svg>
-              </div>
-              <h3>Campus stories</h3>
-              <p lang="si">අපේ පාසලේ ජයග්‍රහණ සහ සුවිශේෂී මොහොතන් ලොවට ගෙන යමු.</p>
-              <p>Celebrating the people and achievements of our college.</p>
-            </article>
-            <article class="highlight-card">
-              <div class="card-top">
-                <span>02</span><svg class="icon"><use href="/assets/icons.svg#heart"></use></svg>
-              </div>
-              <h3>Student voices</h3>
-              <p lang="si">සිසුන්ගේ නිර්මාණශීලී අදහස් සහ හඬට ඉඩක්.</p>
-              <p>A space for new ideas, creativity and collaboration.</p>
-            </article>
-            <article class="highlight-card">
-              <div class="card-top">
-                <span>03</span><svg class="icon"><use href="/assets/icons.svg#camera"></use></svg>
-              </div>
-              <h3>Memories to keep</h3>
-              <p lang="si">සඟබෝ සුන්දර මතකයන් නැවතත් දකින්න.</p>
-              <p>Photography and event coverage, captured with care.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-      <section class="section container" aria-labelledby="gallery-title">
+      <section class="section container latest-section" aria-labelledby="gallery-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">THROUGH OUR LENS</p>
-            <h2 id="gallery-title">Moments worth <em>remembering.</em></h2>
+            <p class="eyebrow">Photo archive</p>
+            <h2 id="gallery-title">Latest photographs</h2>
           </div>
-          <a class="text-link" href="/gallery">Open full gallery</a>
+          <a class="text-link" href="/gallery"
+            >View all albums<svg class="icon"><use href="/assets/icons.svg#arrow-right"></use></svg
+          ></a>
         </div>
         <div class="preview-grid" id="gallery-preview"></div>
         <p class="muted gallery-note" id="gallery-note"></p>
       </section>
+      <section class="section container introduction" aria-labelledby="intro-title">
+        <div>
+          <p class="eyebrow">About SCMU</p>
+          <h2 id="intro-title">The school’s media unit.</h2>
+        </div>
+        <div class="intro-body">
+          <p class="sinhala-copy" lang="si">
+            ශ්‍රී සංඝබෝධි විද්‍යාලයේ උත්සව, ජයග්‍රහණ සහ පාසල් ජීවිතයේ විශේෂ අවස්ථා ඔබ වෙත ගෙන එන අපේ
+            මාධ්‍ය ඒකකය.
+          </p>
+          <p>
+            SCMU covers school events through photography, video and live broadcasts. This website
+            brings our published photographs, event notices and team contacts together in one place.
+          </p>
+          <div class="coverage-list">
+            <div>
+              <span>01</span>
+              <p>Photography &amp; video</p>
+            </div>
+            <div>
+              <span>02</span>
+              <p>School event coverage</p>
+            </div>
+            <div>
+              <span>03</span>
+              <p>Live broadcasts</p>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="section container special-event" aria-labelledby="event-title" hidden>
         <div class="event-emblem">
-          <svg class="icon"><use href="/assets/icons.svg#book"></use></svg>
+          <svg class="icon"><use href="/assets/icons.svg#calendar"></use></svg>
         </div>
-        <div>
-          <p class="eyebrow">SPECIAL EVENT</p>
+        <div class="event-copy">
+          <p class="eyebrow">School notice</p>
           <h2 id="event-title" class="event-sinhala" lang="si"></h2>
           <p id="event-message"></p>
           <p class="event-date" id="event-date" hidden></p>
-          <a class="text-link" href="/gallery">Explore event memories</a>
+          <a class="text-link" href="/gallery"
+            >View event photographs<svg class="icon">
+              <use href="/assets/icons.svg#arrow-right"></use></svg
+          ></a>
         </div>
       </section>
       <section
@@ -201,15 +164,17 @@
       >
         <div class="section-heading">
           <div>
-            <p class="eyebrow"><span class="live-dot"></span> LIVE FROM SCMU</p>
-            <h2 id="live-title">Be part of <em>the moment.</em></h2>
+            <p class="eyebrow"><span class="live-dot"></span> On air</p>
+            <h2 id="live-title">Live broadcast</h2>
           </div>
           <a class="button button-outline" id="live-link" target="_blank" rel="noopener noreferrer"
             >Watch on platform</a
           >
         </div>
         <div class="live-frame" id="live-frame"></div>
-        <p class="muted">If the player is unavailable, use “Watch on platform”.</p>
+        <p class="muted">
+          If the player is unavailable, open the broadcast using “Watch on platform”.
+        </p>
       </section>
       <section
         class="section container board-section"
@@ -219,46 +184,52 @@
       >
         <div class="section-heading">
           <div>
-            <p class="eyebrow">THE TEAM BEHIND THE STORIES</p>
-            <h2 id="board-title">Meet our <em>head board.</em></h2>
+            <p class="eyebrow">Our team</p>
+            <h2 id="board-title">Media unit committee</h2>
           </div>
+          <p>Get in touch with our office bearers.</p>
         </div>
         <div class="board-grid" data-head-grid></div>
       </section>
       <section class="contact-strip" aria-labelledby="contact-title">
         <div class="container section contact-layout">
           <div>
-            <p class="eyebrow">LET’S STAY CONNECTED</p>
-            <h2 id="contact-title">Share a thought.<br /><em>Start a conversation.</em></h2>
-            <p class="sinhala-copy" lang="si">ඔබේ සුබ පැතුම, මතකය හෝ අදහස අප සමඟ බෙදා ගන්න.</p>
-            <p>Your message is shared privately with SCMU.</p>
+            <p class="eyebrow">Contact</p>
+            <h2 id="contact-title">Write to the media unit.</h2>
+            <p>For event coverage, school news or feedback, send us a message.</p>
+            <a class="contact-email" href="mailto:sangabopahasara@gmail.com"
+              >sangabopahasara@gmail.com</a
+            >
             <div class="social-links" data-social-links></div>
           </div>
-          <form class="feedback-form" data-feedback-form>
-            <label for="home-name">Your name <span lang="si">ඔබේ නම</span></label
-            ><input
-              id="home-name"
-              name="name"
-              autocomplete="name"
-              maxlength="80"
-              minlength="2"
-              placeholder="Enter your name"
-              required
-            /><label for="home-message">Your message <span lang="si">ඔබේ පණිවිඩය</span></label
-            ><textarea
-              id="home-message"
-              name="message"
-              rows="4"
-              maxlength="2000"
-              minlength="3"
-              placeholder="Your message or feedback…"
-              required
-            ></textarea
-            ><button class="button button-primary" type="submit">
-              <svg class="icon"><use href="/assets/icons.svg#send"></use></svg> Send message
-            </button>
-            <p class="form-status" role="status" aria-live="polite"></p>
-          </form>
+          <div class="home-form">
+            <form class="feedback-form" data-feedback-form>
+              <label for="home-name">Your name <span lang="si">ඔබේ නම</span></label
+              ><input
+                id="home-name"
+                name="name"
+                autocomplete="name"
+                maxlength="80"
+                minlength="2"
+                placeholder="Name"
+                required
+              /><label for="home-message">Your message <span lang="si">ඔබේ පණිවිඩය</span></label
+              ><textarea
+                id="home-message"
+                name="message"
+                rows="4"
+                maxlength="2000"
+                minlength="3"
+                placeholder="How can we help?"
+                required
+              ></textarea>
+              <p class="privacy-note">Your message is shared privately with the SCMU team.</p>
+              <button class="button button-primary" type="submit">
+                Send message<svg class="icon"><use href="/assets/icons.svg#arrow-right"></use></svg>
+              </button>
+              <p class="form-status" role="status" aria-live="polite"></p>
+            </form>
+          </div>
         </div>
       </section>
     </main>
@@ -266,18 +237,19 @@
       <div class="container footer-main">
         <div>
           <a class="footer-brand" href="/">SCMU<span>Sanghabodhi College Media Unit</span></a>
-          <p>Documenting moments.<br />Honouring the people behind them.</p>
+          <p>Sri Sanghabodhi National College<br />Nittambuwa, Sri Lanka</p>
         </div>
-        <div class="footer-theme">
-          <span lang="si">සඟබෝ පැහැසර</span>
-          <p>Sri Sanghabodhi National College, Nittambuwa</p>
+        <div class="footer-contact">
+          <p class="footer-label">Contact the media unit</p>
+          <a href="mailto:sangabopahasara@gmail.com">sangabopahasara@gmail.com</a
+          ><span lang="si">සඟබෝ පැහැසර</span>
         </div>
         <nav aria-label="Footer navigation">
           <a href="/">Home</a><a href="/gallery">Gallery</a><a href="/contact">Contact</a>
         </nav>
       </div>
       <div class="container footer-bottom">
-        <span>© 2026 SCMU. All rights reserved.</span><span>Developed by Disindu Damsandu.</span>
+        <span>© 2026 SCMU</span><span>Developed by Disindu Damsandu.</span>
       </div>
     </footer>
     <noscript

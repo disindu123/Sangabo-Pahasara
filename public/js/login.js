@@ -1,4 +1,4 @@
-import { api, getConfig, setStatus } from './common.js';
+import { api, getConfig, setStatus } from './common.js?v=20261016-newsroom';
 import {
   initFirebase,
   signInWithCustomToken,

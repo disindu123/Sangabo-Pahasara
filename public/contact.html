@@ -3,29 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Contact &amp; Feedback | සඟබෝ පැහැසර · SCMU</title>
+
+    <title>Contact | සඟබෝ පැහැසර · SCMU</title>
     <meta
       name="description"
-      content="Connect with Sanghabodhi College Media Unit, meet our head board, and share feedback."
+      content="Contact Sanghabodhi College Media Unit for event coverage, school news and feedback."
     />
-    <meta name="theme-color" content="#112e5a" />
-    <link rel="icon" href="/assets/favicon.svg" />
-
-    <link rel="stylesheet" href="/css/fonts.css" />
-    <link rel="stylesheet" href="/css/styles.css?v=20261011-event-footer" />
-    <script type="module" src="/js/contact.js?v=20261011-event-footer"></script>
+    <meta name="theme-color" content="#183247" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/fonts.css?v=20261016-newsroom" />
+    <link rel="stylesheet" href="/css/styles.css?v=20261016-newsroom" />
+    <script type="module" src="/js/contact.js?v=20261016-newsroom"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
       <div class="container header-inner">
         <a class="brand" href="/" aria-label="SCMU home"
-          ><img
-            src="/assets/scmu-logo.svg"
-            alt="Sanghabodhi College Media Unit"
-            width="240"
-            height="58" /></a
-        ><button
+          ><img src="/assets/favicon.svg" alt="" width="48" height="48" /><span class="brand-name"
+            >SCMU<span>Sanghabodhi College Media Unit</span></span
+          ></a
+        >
+        <button
           class="menu-toggle icon-button"
           aria-label="Open menu"
           aria-expanded="false"
@@ -37,75 +36,62 @@
           <a href="/">Home</a><a href="/gallery">Gallery</a
           ><a href="/contact" aria-current="page">Contact</a
           ><a class="admin-link" href="/login/index.html"
-            ><svg class="icon"><use href="/assets/icons.svg#lock"></use></svg> Admin Login</a
-          >
+            >Admin Login<svg class="icon"><use href="/assets/icons.svg#arrow-right"></use></svg
+          ></a>
         </nav>
       </div>
     </header>
     <main id="main">
       <section class="page-heading container">
-        <p class="eyebrow">WORDS FROM THE HEART</p>
-        <h1>Let’s create<br /><em>something together.</em></h1>
-        <p class="sinhala-copy" lang="si">හදවතේ රැඳුණු ස්තුතිය වචනවලට පෙරළමු.</p>
+        <p class="eyebrow">Sanghabodhi College Media Unit</p>
+        <h1>Contact SCMU</h1>
+        <p>For coverage requests, school news and feedback about our work.</p>
       </section>
       <section class="container contact-page contact-layout">
         <div class="contact-information">
-          <span class="section-icon"
-            ><svg class="icon"><use href="/assets/icons.svg#heart"></use></svg
-          ></span>
-          <h2>We'd love to hear<br />from you.</h2>
-          <p>
-            A school story, a collaboration idea, or feedback about our work—SCMU welcomes your
-            words.
-          </p>
-          <div class="contact-detail">
-            <span class="eyebrow">THE COMMUNITY BEHIND THE STORIES</span
-            ><strong>Sri Sanghabodhi National College</strong><span>Nittambuwa, Sri Lanka</span
-            ><span>Media Unit of Sanghabodhi College (SCMU)</span>
-          </div>
-          <p>
-            <a class="text-link" href="mailto:sangabopahasara@gmail.com"
-              >sangabopahasara@gmail.com</a
-            >
-          </p>
-          <p class="small-heading">Stay connected</p>
+          <h2>Contact details</h2>
+          <dl class="contact-details">
+            <div>
+              <dt>Email</dt>
+              <dd><a href="mailto:sangabopahasara@gmail.com">sangabopahasara@gmail.com</a></dd>
+            </div>
+            <div>
+              <dt>School</dt>
+              <dd>Sri Sanghabodhi National College<br />Nittambuwa, Sri Lanka</dd>
+            </div>
+          </dl>
+          <h3>Follow SCMU</h3>
+          <p class="social-note">School photographs, videos and event updates.</p>
           <div class="social-links" data-social-links></div>
-          <p class="muted social-note">
-            Follow our official channels for campus stories and updates.
-          </p>
         </div>
         <div class="form-card">
           <div class="form-card-heading">
-            <p class="eyebrow">YOUR WORDS MATTER</p>
-            <h2>Share your message</h2>
-            <p lang="si">ඔබේ අදහස් සහ සුබ පැතුම් අප වෙත එවන්න.</p>
+            <h2>Send a message</h2>
+            <p lang="si">ඔබේ පණිවිඩය අප වෙත එවන්න.</p>
           </div>
           <form class="feedback-form" data-feedback-form>
-            <label for="name">Your name <span lang="si">ඔබේ නම</span></label
+            <label for="contact-name">Your name <span lang="si">ඔබේ නම</span></label
             ><input
-              id="name"
+              id="contact-name"
               name="name"
               autocomplete="name"
               maxlength="80"
               minlength="2"
-              placeholder="Enter your name"
+              placeholder="Name"
               required
-            /><label for="message">Your message <span lang="si">ඔබේ පණිවිඩය</span></label
+            /><label for="contact-message">Your message <span lang="si">ඔබේ පණිවිඩය</span></label
             ><textarea
-              id="message"
+              id="contact-message"
               name="message"
               rows="6"
               maxlength="2000"
               minlength="3"
-              placeholder="Your message or feedback…"
+              placeholder="How can we help?"
               required
             ></textarea>
-            <p class="privacy-note">
-              <svg class="icon"><use href="/assets/icons.svg#lock"></use></svg> Your message is
-              shared privately with SCMU.
-            </p>
+            <p class="privacy-note">Your message is shared privately with the SCMU team.</p>
             <button class="button button-primary" type="submit">
-              <svg class="icon"><use href="/assets/icons.svg#send"></use></svg> Send message
+              Send message<svg class="icon"><use href="/assets/icons.svg#arrow-right"></use></svg>
             </button>
             <p class="form-status" role="status" aria-live="polite"></p>
           </form>
@@ -119,9 +105,10 @@
       >
         <div class="section-heading">
           <div>
-            <p class="eyebrow">THE TEAM BEHIND THE STORIES</p>
-            <h2 id="board-title">Meet our <em>head board.</em></h2>
+            <p class="eyebrow">Our team</p>
+            <h2 id="board-title">Media unit committee</h2>
           </div>
+          <p>Get in touch with our office bearers.</p>
         </div>
         <div class="board-grid" data-head-grid></div>
       </section>
@@ -130,18 +117,19 @@
       <div class="container footer-main">
         <div>
           <a class="footer-brand" href="/">SCMU<span>Sanghabodhi College Media Unit</span></a>
-          <p>Documenting moments.<br />Honouring the people behind them.</p>
+          <p>Sri Sanghabodhi National College<br />Nittambuwa, Sri Lanka</p>
         </div>
-        <div class="footer-theme">
-          <span lang="si">සඟබෝ පැහැසර</span>
-          <p>Sri Sanghabodhi National College, Nittambuwa</p>
+        <div class="footer-contact">
+          <p class="footer-label">Contact the media unit</p>
+          <a href="mailto:sangabopahasara@gmail.com">sangabopahasara@gmail.com</a
+          ><span lang="si">සඟබෝ පැහැසර</span>
         </div>
         <nav aria-label="Footer navigation">
           <a href="/">Home</a><a href="/gallery">Gallery</a><a href="/contact">Contact</a>
         </nav>
       </div>
       <div class="container footer-bottom">
-        <span>© 2026 SCMU. All rights reserved.</span><span>Developed by Disindu Damsandu.</span>
+        <span>© 2026 SCMU</span><span>Developed by Disindu Damsandu.</span>
       </div>
     </footer>
     <noscript><p class="noscript-notice">Enable JavaScript to send feedback.</p></noscript>

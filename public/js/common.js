@@ -145,7 +145,7 @@ function setupNavigation() {
   document.addEventListener('click', (event) => {
     if (!nav.contains(event.target) && !button.contains(event.target)) close();
   });
-  matchMedia('(min-width: 681px)').addEventListener('change', (event) => {
+  matchMedia('(min-width: 801px)').addEventListener('change', (event) => {
     if (event.matches) close();
   });
 }
@@ -211,7 +211,6 @@ function setupFeedback() {
 }
 export async function setupCommon() {
   setupNavigation();
-  setupMotion();
   setupFeedback();
   setupNotifications();
   setupHeadBoard();
@@ -440,42 +439,4 @@ async function setupHeadBoard() {
   } catch {
     /* Only published board members are displayed. */
   }
-}
-
-// Content remains visible without JavaScript and when reduced motion is requested.
-function setupMotion() {
-  const preference = matchMedia('(prefers-reduced-motion: reduce)');
-  if (!('IntersectionObserver' in window) || preference.matches) return;
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries)
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
-    },
-    { threshold: 0.08 },
-  );
-  const selector =
-    '.section-heading, .highlight-card, .photo-card, .board-card, .special-event, .contact-form';
-  const register = () =>
-    document.querySelectorAll(selector).forEach((node) => {
-      if (node.classList.contains('motion-ready')) return;
-      // Only animate content below the viewport; above-the-fold content stays immediate.
-      if (node.getBoundingClientRect().top < innerHeight) node.classList.add('is-visible');
-      node.classList.add('motion-ready');
-      observer.observe(node);
-    });
-  register();
-  const mutations = new MutationObserver(register);
-  mutations.observe(document.querySelector('main') || document.body, {
-    childList: true,
-    subtree: true,
-  });
-  preference.addEventListener('change', (event) => {
-    if (!event.matches) return;
-    observer.disconnect();
-    mutations.disconnect();
-    document.querySelectorAll('.motion-ready').forEach((node) => node.classList.add('is-visible'));
-  });
 }

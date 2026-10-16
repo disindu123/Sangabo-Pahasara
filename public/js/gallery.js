@@ -5,7 +5,7 @@ import {
   photoCard,
   safeImage,
   setStatus,
-} from './common.js?v=20261011-event-footer';
+} from './common.js?v=20261016-newsroom';
 setupCommon();
 const grid = document.querySelector('#gallery-grid');
 const loadMore = document.querySelector('#load-more');
@@ -33,7 +33,7 @@ async function load() {
       if (error.code !== 'FIREBASE_NOT_CONFIGURED') throw error;
       result = { items: await starterPhotos(), nextCursor: null };
       notice.textContent =
-        'Preview album · These are illustrative education photographs. SCMU will publish the official SCMU photographs here.';
+        'Illustrative photographs. Official SCMU albums will appear here when published.';
       notice.hidden = false;
     }
     for (const photo of result.items) {
@@ -45,7 +45,7 @@ async function load() {
         album.className = 'gallery-album';
         const heading = document.createElement('h2');
         heading.textContent =
-          photo.albumTitle || (photo.facebookAlbumUrl ? 'SCMU album' : 'From our lens');
+          photo.albumTitle || (photo.facebookAlbumUrl ? 'SCMU album' : 'School photographs');
         album.append(heading);
         const photosGrid = document.createElement('div');
         photosGrid.className = 'album-grid';

@@ -4,7 +4,7 @@ import {
   starterPhotos,
   safeImage,
   photoCard,
-} from './common.js?v=20261011-event-footer';
+} from './common.js?v=20261016-newsroom';
 setupCommon();
 
 async function setupSlider() {
@@ -65,6 +65,8 @@ async function setupSlider() {
     });
     [...dots.children].forEach((dot, i) => dot.setAttribute('aria-pressed', String(i === current)));
     count.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+    document.querySelector('#slide-caption').textContent =
+      slides[current].caption || 'Sanghabodhi College photo archive';
     if (manual) announcement.textContent = `Slide ${current + 1} of ${slides.length}`;
   }
   function pauseLabel() {
