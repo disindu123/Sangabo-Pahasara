@@ -5,7 +5,7 @@ import {
   photoCard,
   safeImage,
   setStatus,
-} from './common.js?v=20261018-team-photo';
+} from './common.js?v=20261018-nav-upload';
 setupCommon();
 const grid = document.querySelector('#gallery-grid');
 const loadMore = document.querySelector('#load-more');

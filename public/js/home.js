@@ -4,7 +4,7 @@ import {
   starterPhotos,
   safeImage,
   photoCard,
-} from './common.js?v=20261018-team-photo';
+} from './common.js?v=20261018-nav-upload';
 setupCommon();
 
 async function setupSlider() {

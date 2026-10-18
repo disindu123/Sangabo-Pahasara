@@ -1,4 +1,4 @@
-import { validateImage } from './upload.js';
+import { validateImage, preparePhoto } from './upload.js';
 
 // Enhance the native file picker; both picker and drop use the same upload path.
 export function setupDropUpload(input) {
@@ -66,6 +66,7 @@ export function setupDropUpload(input) {
     try {
       if (input.files.length) validateImage(input.files[0]);
       render();
+      if (input.files.length) void preparePhoto(input.files[0]);
     } catch (error) {
       input.value = '';
       render();
