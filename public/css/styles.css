@@ -358,11 +358,13 @@ em {
 /* Homepage */
 .hero {
   display: grid;
-  grid-template-columns: 1.45fr 1fr;
-  gap: 30px 70px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 60px;
+  align-items: center;
   padding-top: 58px;
-  padding-bottom: 0;
+  padding-bottom: 54px;
 }
+.hero-copy,
 .hero-heading,
 .hero-intro {
   min-width: 0;
@@ -371,36 +373,64 @@ em {
   margin-bottom: 8px;
 }
 .sinhala-title {
-  margin: 0 0 4px;
-  font-size: clamp(2.2rem, 4.5vw, 4rem);
-  font-family: 'Noto Sans Sinhala', sans-serif;
-  font-weight: 600;
-  line-height: 1.75;
+  margin: 20px 0 24px;
+  font-size: clamp(4rem, 6.8vw, 6.6rem);
+  font-family: 'Abhaya Libre', 'Noto Sans Sinhala', serif;
+  font-weight: 800;
+  line-height: 1.12;
   letter-spacing: 0;
-  color: var(--navy);
+  color: #ae7d2d;
+  -webkit-text-stroke: 0.25px #a67930;
+  filter: drop-shadow(0 2px 1px rgb(168 120 35 / 10%));
+}
+.sinhala-title > span {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+}
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  .sinhala-title > span {
+    background: linear-gradient(
+      110deg,
+      #76511a 0%,
+      #bb8c38 32%,
+      #e0bd6e 43%,
+      #fff1bf 50%,
+      #e0bd6e 57%,
+      #9b6c21 68%,
+      #c59b4a 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 .hero-school {
-  font-size: 0.8rem;
-  margin-bottom: 0;
+  font-size: 0.875rem;
+  margin-bottom: 22px;
 }
 .hero-intro {
-  align-self: center;
-  padding-top: 8px;
+  padding-top: 0;
 }
 .hero-intro > p {
   max-width: 395px;
   font-size: 1rem;
 }
 .hero-visual {
-  grid-column: 1 / -1;
   min-width: 0;
+  padding-top: 5px;
 }
 .image-frame {
   position: relative;
+  padding: 9px;
+  border: 1px solid #dbc697;
+  border-radius: 230px 230px 22px 22px;
 }
 .hero-slider {
   position: relative;
-  aspect-ratio: 2.3;
+  aspect-ratio: 1.035;
+  border-radius: 220px 220px 15px 15px;
   overflow: hidden;
   background: #e4e8e9;
 }
@@ -430,7 +460,7 @@ em {
   position: absolute;
   bottom: 28px;
   left: 30px;
-  max-width: calc(100% - 190px);
+  max-width: calc(100% - 150px);
 }
 .photo-kicker {
   font-size: 0.65rem;
@@ -467,11 +497,10 @@ em {
   border-bottom: 1px solid var(--border);
 }
 .slider-label {
-  margin-right: auto;
-  font-size: 0.75rem;
-  color: var(--body);
+  display: none;
 }
 .slider-dots {
+  margin-right: auto;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -1140,8 +1169,9 @@ dialog::backdrop {
 }
 /* Footer */
 .site-footer {
-  border-top: 1px solid var(--border);
-  background: #fff;
+  border-top: 1px solid #112e5a;
+  background: #112e5a;
+  color: #e1e9f5;
   margin-top: 20px;
 }
 .footer-main {
@@ -1152,7 +1182,7 @@ dialog::backdrop {
 }
 .footer-brand {
   display: inline-block;
-  color: var(--navy);
+  color: #fff;
   font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.4;
@@ -1167,12 +1197,13 @@ dialog::backdrop {
   margin-top: 3px;
 }
 .footer-main p {
+  color: #cfdbed;
   font-size: 0.78rem;
   line-height: 1.8;
   margin-bottom: 0;
 }
 .footer-contact .footer-label {
-  color: var(--ink);
+  color: #fff;
   font-size: 0.8rem;
   margin: 4px 0 15px;
 }
@@ -1183,7 +1214,7 @@ dialog::backdrop {
   overflow-wrap: anywhere;
 }
 .footer-contact > span {
-  color: var(--body);
+  color: #cfdbed;
   font-size: 0.8rem;
 }
 .footer-main nav {
@@ -1193,6 +1224,7 @@ dialog::backdrop {
   font-size: 0.8rem;
 }
 .footer-main a:hover {
+  color: #f0d696;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -1205,6 +1237,10 @@ dialog::backdrop {
   gap: 20px;
   font-size: 0.72rem;
   color: var(--body);
+}
+.site-footer .footer-bottom {
+  border-top-color: rgb(255 255 255 / 22%);
+  color: #c4d3e8;
 }
 .noscript-notice {
   padding: 16px;
@@ -1701,11 +1737,34 @@ dialog::backdrop {
 }
 /* A little feedback on interaction; content is never hidden for an entrance effect. */
 @media (prefers-reduced-motion: no-preference) {
+  .sinhala-title > span {
+    animation: title-gold-glow 4.5s ease-in-out infinite;
+  }
   .loading-logo {
     animation: logo-pulse 1.6s ease-in-out infinite;
   }
   dialog[open] {
     animation: dialog-appear 160ms ease-out;
+  }
+}
+@keyframes title-gold-glow {
+  0%,
+  100% {
+    background-position: 100% 50%;
+    filter: drop-shadow(0 0 2px rgb(223 196 132 / 15%));
+  }
+  50% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 9px rgb(223 196 132 / 45%));
+  }
+}
+@media (forced-colors: active) {
+  .sinhala-title > span {
+    background: none;
+    color: CanvasText;
+    -webkit-text-fill-color: CanvasText;
+    -webkit-text-stroke: 0;
+    filter: none;
   }
 }
 @keyframes logo-pulse {
@@ -1805,6 +1864,9 @@ dialog::backdrop {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+  .hero-copy {
+    max-width: 550px;
+  }
   .hero-intro {
     padding-top: 0;
   }
@@ -1812,13 +1874,12 @@ dialog::backdrop {
     max-width: 540px;
   }
   .sinhala-title {
-    font-size: clamp(2.3rem, 6.5vw, 3.7rem);
+    font-size: clamp(4rem, 10vw, 5.8rem);
   }
   .hero-visual {
     margin-top: 10px;
-  }
-  .hero-slider {
-    aspect-ratio: 1.85;
+    width: min(100%, 560px);
+    margin-inline: auto;
   }
   .section {
     padding-block: 58px;
@@ -1922,8 +1983,8 @@ dialog::backdrop {
     margin-bottom: 8px;
   }
   .sinhala-title {
-    font-size: clamp(1.85rem, 7.5vw, 2.8rem);
-    line-height: 1.9;
+    font-size: clamp(3.4rem, 15vw, 5rem);
+    line-height: 1.12;
   }
   .hero-school {
     font-size: 0.7rem;
@@ -1934,9 +1995,6 @@ dialog::backdrop {
   }
   .hero .button-row {
     gap: 18px;
-  }
-  .hero-slider {
-    aspect-ratio: 1.25;
   }
   .slider-caption {
     bottom: 24px;
