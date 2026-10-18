@@ -4,7 +4,7 @@ The official SCMU website, designed as a school media archive with off-white bac
 
 ## Included
 
-- Home: readable Sinhala identity, a wide photo archive with captions, six illustrative starter slides, autoplay, arrows, dots, pause, swipe, keyboard controls and reduced-motion support; latest photographs, a concise introduction and a special-event section fully managed through the dashboard.
+- Home: the original animated gold Sinhala heading alongside an arched photo slider, six illustrative starter slides, captions, autoplay, arrows, dots, pause, swipe, keyboard controls and reduced-motion support; latest photographs, a concise introduction and a special-event section fully managed through the dashboard.
 - Gallery: paginated, lazy-loaded photographs, keyboard/swipe lightbox and albums grouped by their exact Facebook album URL. Each linked album has “View more on Facebook”.
 - Contact: configurable official social channels, YouTube, `sangabopahasara@gmail.com`, and a private feedback form with **Name and Message only**.
 - Head board: President, Secretary, V.President, V.Secretary and Treasurer, with optional photograph and WhatsApp/Facebook/LinkedIn/email SVG links. Empty positions stay hidden.
@@ -220,7 +220,7 @@ API/unit tests inject test-only services and cover role restrictions, privacy, v
 
 Before a public launch, verify actual credentials, Cloudinary uploads/deletion, Firestore IAM/rules, Firebase Auth and the host’s forwarded IP behavior on a staging deployment. The source is deployment-ready, but no live Firebase project is configured by these files.
 
-Navigation uses a moving underline for hover and keyboard focus. Button feedback, slideshow fades and brief dialog transitions respect `prefers-reduced-motion`. Content remains visible without entrance effects or JavaScript. English uses the system sans-serif stack and Sinhala uses the existing self-hosted Noto Sans Sinhala font; the heading has no outline, gradient or glow. The default logo is the existing SCMU favicon, with the `LOGO_URL` override retained. Login, dashboard, maintenance and error screens share the same typography and spacing. All page entrypoints carry updated asset versions so older cached styles cannot hide the redesign.
+Navigation uses a moving underline for hover and keyboard focus. The gold heading shimmer, button feedback, slideshow fades and brief dialog transitions respect `prefers-reduced-motion`. Content remains visible without entrance effects or JavaScript. English uses the system sans-serif stack and Sinhala body text uses the existing self-hosted Noto Sans Sinhala font. The homepage title restores the original self-hosted Abhaya Libre face with a gold gradient, fine outline and travelling highlight. Its slider sits alongside the text on desktop and below it on phones. The entire public footer, including the copyright row, uses a deep-blue background with light text. The default logo is the existing SCMU favicon, with the `LOGO_URL` override retained. Login, dashboard, maintenance and error screens share the same typography and spacing. All stylesheets carry updated asset versions so older cached styles cannot hide changes.
 
 All dashboard image controls (gallery, slider, special events and head board) support dragging one image onto the upload area. They show a local preview and filename, support removing/replacing a selection, and reject unsupported or oversized files before uploading. The keyboard-accessible native picker remains available on mobile. Files are uploaded to Cloudinary when you submit the form.
 
