@@ -1942,13 +1942,23 @@ dialog::backdrop {
     gap: 20px;
   }
   .hero-copy {
+    width: 100%;
     max-width: 550px;
+    margin-inline: auto;
+    text-align: center;
+  }
+  .hero-copy .sinhala-title > span {
+    margin-inline: auto;
+  }
+  .hero-copy .button-row {
+    justify-content: center;
   }
   .hero-intro {
     padding-top: 0;
   }
   .hero-intro > p {
     max-width: 540px;
+    margin-inline: auto;
   }
   .sinhala-title {
     font-size: clamp(4rem, 10vw, 5.8rem);

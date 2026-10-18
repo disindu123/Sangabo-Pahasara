@@ -9,10 +9,12 @@ The official SCMU website, designed as a school media archive with off-white bac
 - Contact: configurable official social channels and YouTube, a written `sangabopahasara@gmail.com` link, and a private feedback form with **Name and Message only**. The social icon row has no envelope icon; board-member email links remain available.
 - Head board: President, Secretary, V.President, V.Secretary and Treasurer, with optional photograph and WhatsApp/Facebook/LinkedIn/email SVG links. Empty positions stay hidden.
 - Events: once-per-browser pop-up for the latest new event and a persistent, paginated notification list. Optional images.
-- Live: a viewer appears only when an Admin publishes an exact YouTube or public Facebook video URL. Includes a direct platform link if embedding is unavailable.
+- Live: a viewer appears only when an Admin publishes an exact YouTube or public Facebook video URL. The player loads and requests muted autoplay once at least 35% of its frame scrolls into view; YouTube uses inline playback on phones. Scrolling away and back preserves the existing player and its controls. Includes a direct platform link if embedding is unavailable.
 - Navigation: a soft blue link highlight with short fade/scale transitions, plus a responsive fade-and-slide mobile menu. Closed menus are excluded from keyboard navigation; Escape closes the menu and returns focus to its toggle. Reduced-motion preferences are respected.
 - Staff workspace: accounts, feedback, photographs, slider ordering, events, live status, board, team photo, maintenance and IP blocks, subject to roles below.
 - Login: the original full-height navy-and-gold split layout, with a gold Sinhala heading and a responsive staff sign-in form.
+
+Live autoplay is subject to browser settings and provider restrictions. Visitors can press Play if autoplay is blocked, and enable sound in the player. Browsers without IntersectionObserver retain manual playback. See [YouTube player parameters](https://developers.google.com/youtube/player_parameters) and [Chrome autoplay policy](https://developer.chrome.com/blog/autoplay/).
 
 ## Roles
 

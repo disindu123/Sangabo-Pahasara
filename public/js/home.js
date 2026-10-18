@@ -170,16 +170,44 @@ async function setupLive() {
     if (!['https://www.youtube-nocookie.com', 'https://www.facebook.com'].includes(url.origin))
       return;
     const frame = document.createElement('iframe');
-    frame.src = url.href;
     frame.title = 'SCMU live broadcast';
-    frame.loading = 'lazy';
-    frame.allow = 'encrypted-media; picture-in-picture; fullscreen';
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
     frame.allowFullscreen = true;
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    document.querySelector('#live-frame').append(frame);
+    const viewer = document.querySelector('#live-frame');
+    viewer.append(frame);
     const link = document.querySelector('#live-link');
     link.href = live.url;
     document.querySelector('#live-section').hidden = false;
+    let started = false;
+    const start = (autoplay = true) => {
+      if (started) return;
+      started = true;
+      const youtube = url.origin === 'https://www.youtube-nocookie.com';
+      url.searchParams.set('autoplay', youtube ? (autoplay ? '1' : '0') : String(autoplay));
+      // YouTube requires an explicit mute flag. Facebook autoplay starts muted.
+      if (youtube) {
+        url.searchParams.set('mute', '1');
+        url.searchParams.set('playsinline', '1');
+      }
+      frame.src = url.href;
+    };
+    if (!('IntersectionObserver' in window)) {
+      // Older browsers retain a usable player without unexpected off-screen autoplay.
+      start(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.35)) {
+          start();
+          // Do not reload a broadcast or undo a visitor's pause/unmute on later scrolls.
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    observer.observe(viewer);
   } catch {
     /* A live viewer is shown only when published. */
   }
