@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../lib/app.js';
 import { loadConfig } from '../lib/config.js';
@@ -56,6 +56,7 @@ before(async () => {
       });
   server = createApp({
     config: loadConfig({
+      TRUST_PROXY: '1',
       RATE_LIMIT_SALT: 'test-only-salt',
       FB_PRIVATE_KEY: 'private-test-secret',
       CLOUDINARY_CLOUD_NAME: 'test-cloud',
@@ -68,10 +69,16 @@ before(async () => {
   origin = `http://127.0.0.1:${server.address().port}`;
 });
 after(() => new Promise((r) => server.close(r)));
+// Isolate scenario traffic while retaining the production burst limiter.
+let scenarioIp = 10;
+beforeEach(() => {
+  scenarioIp++;
+});
 async function request(path, { method = 'GET', body, token, headers = {} } = {}) {
   const res = await fetch(origin + path, {
     method,
     headers: {
+      'X-Forwarded-For': `192.0.2.${scenarioIp}`,
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
@@ -116,6 +123,8 @@ test('role matrix protects every management route independently of dashboard vis
     ['/api/blocked-ips/192.0.2.1', 'DELETE', ['admin']],
     ['/api/media-heads/president', 'PUT', ['admin']],
     ['/api/media-heads/president', 'DELETE', ['admin']],
+    ['/api/team-photo', 'PUT', ['admin']],
+    ['/api/team-photo', 'DELETE', ['admin']],
   ];
   for (const [path, method, allowed] of cases)
     for (const token of [undefined, 'student', 'teacher']) {
@@ -368,4 +377,56 @@ test('every staff role can publish an event but only Admin can edit or delete it
       204,
     );
   }
+});
+
+test('only Admin can request team-photo upload permits', async () => {
+  const body = { collection: 'teamPhoto', contentType: 'image/jpeg', size: 512 };
+  for (const token of [undefined, 'student', 'teacher']) {
+    const result = await request('/api/uploads/ticket', { method: 'POST', token, body });
+    assert.equal(result.status, token ? 403 : 401);
+  }
+  const allowed = await request('/api/uploads/ticket', { method: 'POST', token: 'admin', body });
+  assert.equal(allowed.status, 201);
+  assert.equal(allowed.body.collection, 'teamPhoto');
+});
+
+test('Admin publishes, replaces and removes the public team photo with private metadata omitted', async () => {
+  assert.deepEqual((await request('/api/team-photo')).body, { imageUrl: '', caption: '' });
+  for (const body of [
+    {},
+    { imageUrl: 'javascript:alert(1)' },
+    { imageUrl: 'http://images.example/team.jpg' },
+    { imageUrl: 'https://images.example/team.jpg', caption: 'x'.repeat(301) },
+    { imageUrl: 'https://images.example/team.jpg', ticketId: 'unused-permit' },
+  ]) {
+    assert.equal(
+      (await request('/api/team-photo', { method: 'PUT', token: 'admin', body })).status,
+      400,
+    );
+  }
+  const first = { imageUrl: 'https://images.example/team.jpg', caption: 'SCMU team' };
+  assert.equal(
+    (await request('/api/team-photo', { method: 'PUT', token: 'admin', body: first })).status,
+    200,
+  );
+  const raw = (await db.collection('teamPhoto').doc('current').get()).data();
+  assert.ok(raw.createdAt);
+  assert.ok(Object.hasOwn(raw, 'storagePath'));
+  assert.deepEqual((await request('/api/team-photo')).body, first);
+  const replacement = { imageUrl: 'https://images.example/new-team.jpg', caption: 'Current team' };
+  await request('/api/team-photo', { method: 'PUT', token: 'admin', body: replacement });
+  assert.equal((await db.collection('teamPhoto').get()).size, 1);
+  assert.deepEqual((await request('/api/team-photo')).body, replacement);
+  await store.setSettings({ maintenanceMode: true });
+  try {
+    assert.equal((await request('/api/team-photo')).status, 503);
+    assert.equal((await request('/api/team-photo', { token: 'admin' })).status, 200);
+  } finally {
+    await store.setSettings({ maintenanceMode: false });
+  }
+  assert.equal(
+    (await request('/api/team-photo', { method: 'DELETE', token: 'admin' })).status,
+    204,
+  );
+  assert.deepEqual((await request('/api/team-photo')).body, { imageUrl: '', caption: '' });
 });

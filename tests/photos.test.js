@@ -209,3 +209,31 @@ test('deletion only accepts managed Cloudinary IDs and retains legacy Firebase d
   await ctx.photos.destroy('uploads/gallery/owner/photo.png');
   assert.deepEqual(removed, ['uploads/gallery/owner/photo.png']);
 });
+
+test('team-photo uploads retain ownership, replace one singleton and delete managed Cloudinary assets', async () => {
+  const ctx = setup(),
+    store = new FirebaseStore(ctx.db, ctx.photos);
+  const first = await uploaded(ctx, 'teamPhoto', 'admin-owner');
+  await assert.rejects(ctx.photos.inspect(first.ticketId, 'teamPhoto', 'student'), {
+    code: 'INVALID_UPLOAD',
+  });
+  await assert.rejects(ctx.photos.inspect(first.ticketId, 'gallery', 'admin-owner'), {
+    code: 'INVALID_UPLOAD',
+  });
+  const image = await store.prepareImage('teamPhoto', { ticketId: first.ticketId }, 'admin-owner');
+  await store.saveContent('teamPhoto', { caption: 'Team' }, image, 'current');
+  await store.saveContent('teamPhoto', { caption: 'Retried response' }, image, 'current');
+  assert.equal((await store.getTeamPhoto()).caption, 'Team');
+  const second = await uploaded(ctx, 'teamPhoto', 'admin-owner');
+  await store.saveContent(
+    'teamPhoto',
+    { caption: 'New team' },
+    await store.prepareImage('teamPhoto', { ticketId: second.ticketId }, 'admin-owner'),
+    'current',
+  );
+  assert.equal((await ctx.db.collection('teamPhoto').get()).size, 1);
+  assert.deepEqual(ctx.deleted, [first.storagePath]);
+  await store.remove('teamPhoto', 'current');
+  assert.deepEqual(ctx.deleted, [first.storagePath, second.storagePath]);
+  assert.equal((await store.getTeamPhoto()).imageUrl, '');
+});

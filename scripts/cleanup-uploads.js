@@ -7,7 +7,7 @@ try {
   const { db, photos } = createFirebaseServices(loadConfig())();
   photos.requireConfigured();
   const references = new Set();
-  for (const collection of ['gallery', 'slider', 'popups', 'mediaHeads'])
+  for (const collection of ['gallery', 'slider', 'popups', 'mediaHeads', 'teamPhoto'])
     for (const doc of (await db.collection(collection).get()).docs)
       if (doc.data().storagePath) references.add(doc.data().storagePath);
   let count = 0;
@@ -15,9 +15,9 @@ try {
     if (references.has(file.name)) continue;
     if (!Number.isFinite(Date.parse(file.createdAt)) || Date.parse(file.createdAt) > cutoff)
       continue;
-    // Recheck all four collections immediately before deletion.
+    // Recheck every managed collection immediately before deletion.
     let used = false;
-    for (const collection of ['gallery', 'slider', 'popups', 'mediaHeads'])
+    for (const collection of ['gallery', 'slider', 'popups', 'mediaHeads', 'teamPhoto'])
       if (
         !(await db.collection(collection).where('storagePath', '==', file.name).limit(1).get())
           .empty

@@ -4,7 +4,7 @@ import {
   starterPhotos,
   safeImage,
   photoCard,
-} from './common.js?v=20261016-newsroom';
+} from './common.js?v=20261018-team-photo';
 setupCommon();
 
 async function setupSlider() {
@@ -185,3 +185,20 @@ async function setupLive() {
   }
 }
 setupLive();
+
+async function setupTeamPhoto() {
+  try {
+    const photo = await api('/api/team-photo');
+    if (!photo.imageUrl) return;
+    const image = document.querySelector('#team-photo-image');
+    safeImage(image, photo.imageUrl);
+    image.alt = photo.caption || 'Sanghabodhi College Media Unit team';
+    const caption = document.querySelector('#team-photo-caption');
+    caption.textContent = photo.caption || '';
+    caption.hidden = !photo.caption;
+    document.querySelector('#about-team-photo').hidden = false;
+  } catch {
+    /* The team photograph is shown only after an admin publishes it. */
+  }
+}
+setupTeamPhoto();

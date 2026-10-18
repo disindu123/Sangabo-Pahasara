@@ -6,9 +6,9 @@
     <meta name="robots" content="noindex,nofollow" />
     <title>Staff Dashboard | සඟබෝ පැහැසර · SCMU</title>
     <link rel="icon" href="/assets/favicon.svg" />
-    <link rel="stylesheet" href="/css/fonts.css?v=20261018-gold-hero" />
-    <link rel="stylesheet" href="/css/styles.css?v=20261018-gold-hero" />
-    <script type="module" src="/js/admin.js?v=20261016-newsroom"></script>
+    <link rel="stylesheet" href="/css/fonts.css?v=20261018-team-photo" />
+    <link rel="stylesheet" href="/css/styles.css?v=20261018-team-photo" />
+    <script type="module" src="/js/admin.js?v=20261018-team-photo"></script>
   </head>
   <body class="admin-body">
     <a class="skip-link" href="#main">Skip to dashboard</a>
@@ -363,6 +363,48 @@
             <p class="form-status" role="status"></p>
           </form>
           <div id="head-list" class="admin-content-grid"></div>
+        </section>
+        <section id="panel-teamPhoto" class="staff-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Team photograph</h2>
+              <p>Shown below “The school’s media unit” on the home page. Admins only.</p>
+            </div>
+            <button class="button button-outline" data-refresh="teamPhoto">Refresh</button>
+          </div>
+          <form id="teamPhoto-form" class="admin-form">
+            <div class="form-grid">
+              <div>
+                <label for="team-photo-file">Upload team photograph</label
+                ><input
+                  id="team-photo-file"
+                  name="file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                /><small
+                  >Choose a landscape photograph. A 16:9 image is recommended; up to 10 MB.</small
+                >
+              </div>
+              <div>
+                <label for="team-photo-url">Or HTTPS image URL</label
+                ><input id="team-photo-url" name="imageUrl" type="url" placeholder="https://…" />
+              </div>
+              <div class="full-width">
+                <label for="team-photo-form-caption">Caption (optional)</label
+                ><input id="team-photo-form-caption" name="caption" maxlength="300" />
+              </div>
+            </div>
+            <progress
+              id="teamPhoto-progress"
+              max="100"
+              value="0"
+              hidden
+              aria-label="Team photograph upload progress"
+            ></progress
+            ><button class="button button-primary" type="submit">Publish team photo</button>
+            <p class="form-status" role="status" aria-live="polite"></p>
+          </form>
+          <div class="team-photo-preview" id="team-photo-preview"></div>
         </section>
         <section id="panel-settings" class="staff-panel" hidden>
           <h2>Website availability</h2>
