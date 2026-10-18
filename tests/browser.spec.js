@@ -290,7 +290,7 @@ test('navigation highlights links and animates an accessible responsive menu', a
     await toggle.click();
     await expect(nav).toBeVisible();
     await expect(nav).toHaveCSS('opacity', '1');
-    expect(await nav.evaluate((node) => node.inert)).toBe(false);
+    await expect.poll(() => nav.evaluate((node) => node.inert)).toBe(false);
     await contact.focus();
     await page.keyboard.press('Escape');
     await expect(nav).toBeHidden();
@@ -302,7 +302,7 @@ test('navigation highlights links and animates an accessible responsive menu', a
   await page.setViewportSize({ width: 801, height: 844 });
   await expect(nav).toHaveCSS('position', 'relative');
   await expect(nav).toBeVisible();
-  expect(await nav.evaluate((node) => node.inert)).toBe(false);
+  await expect.poll(() => nav.evaluate((node) => node.inert)).toBe(false);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(await home.evaluate((node) => getComputedStyle(node, '::before').transitionDuration)).toBe(
     '0s',
@@ -848,4 +848,122 @@ test('Admin manages the landscape About team photo while public social rows omit
   await expect(page.locator('#team-photo-preview')).toContainText('No team photograph');
   await page.goto('/');
   await expect(page.locator('#about-team-photo')).toBeHidden();
+});
+
+for (const platform of ['youtube', 'facebook']) {
+  for (const width of [1440, 390]) {
+    test(`${platform} live autoplay waits for scrolling into view at ${width}px and loads only once`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      const requests = [];
+      const embedUrl =
+        platform === 'youtube'
+          ? 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+          : 'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fscmu%2Fvideos%2F123%2F&show_text=false';
+      await page.route('**/api/live', (route) =>
+        route.fulfill({
+          json: {
+            isLive: true,
+            platform,
+            embedUrl,
+            url:
+              platform === 'youtube'
+                ? 'https://youtu.be/dQw4w9WgXcQ'
+                : 'https://www.facebook.com/scmu/videos/123/',
+          },
+        }),
+      );
+      await page.route(
+        platform === 'youtube'
+          ? 'https://www.youtube-nocookie.com/**'
+          : 'https://www.facebook.com/plugins/video.php?*',
+        (route) => {
+          requests.push(new URL(route.request().url()));
+          return route.fulfill({
+            contentType: 'text/html',
+            body: '<html><body>Live player fixture</body></html>',
+          });
+        },
+      );
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+      const frame = page.locator('#live-frame iframe');
+      await expect(frame).toHaveCount(1);
+      await expect(frame).not.toHaveAttribute('src');
+      expect(requests).toHaveLength(0);
+      const source = frame.locator('..');
+      // A small visible strip does not start the stream prematurely.
+      await source.evaluate((node) => {
+        const y = node.getBoundingClientRect().top + scrollY;
+        window.scrollTo({ top: y - innerHeight + 20, behavior: 'instant' });
+      });
+      await expect
+        .poll(() =>
+          source.evaluate((node) => {
+            const box = node.getBoundingClientRect();
+            return box.top < innerHeight && box.top > innerHeight - 40;
+          }),
+        )
+        .toBe(true);
+      await expect(frame).not.toHaveAttribute('src');
+      expect(requests).toHaveLength(0);
+      await source.scrollIntoViewIfNeeded();
+      await expect.poll(() => requests.length).toBe(1);
+      const params = requests[0].searchParams;
+      expect(params.get('autoplay')).toBe(platform === 'youtube' ? '1' : 'true');
+      if (platform === 'youtube') {
+        expect(params.get('mute')).toBe('1');
+        expect(params.get('playsinline')).toBe('1');
+      } else {
+        expect(params.get('href')).toBe('https://www.facebook.com/scmu/videos/123/');
+        expect(params.get('show_text')).toBe('false');
+      }
+      await expect(frame).toHaveAttribute('allow', /autoplay/);
+      await expect(frame).toHaveAttribute('title', 'SCMU live broadcast');
+      const src = await frame.getAttribute('src');
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      await page.locator('#hero-title').scrollIntoViewIfNeeded();
+      await source.scrollIntoViewIfNeeded();
+      await expect(frame).toHaveAttribute('src', src);
+      expect(requests).toHaveLength(1);
+      await expect(page.locator('#live-link')).toHaveAttribute('target', '_blank');
+    });
+  }
+}
+
+test('live viewer retains manual playback without IntersectionObserver', async ({ page }) => {
+  await page.route('**/api/live', (route) =>
+    route.fulfill({
+      json: {
+        isLive: true,
+        platform: 'youtube',
+        url: 'https://youtu.be/dQw4w9WgXcQ',
+        embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+      },
+    }),
+  );
+  await page.addInitScript(() => {
+    delete window.IntersectionObserver;
+  });
+  await page.goto('/');
+  const frame = page.locator('#live-frame iframe');
+  await expect(frame).toHaveAttribute('src', /autoplay=0/);
+  await expect(page.locator('#live-link')).toHaveAttribute('href', 'https://youtu.be/dQw4w9WgXcQ');
+});
+
+test('unpublished or untrusted live sources stay hidden and do not load a player', async ({
+  page,
+}) => {
+  for (const live of [
+    { isLive: false, embedUrl: '' },
+    { isLive: true, embedUrl: 'https://untrusted.example/embed/video' },
+  ]) {
+    await page.route('**/api/live', (route) => route.fulfill({ json: live }));
+    await page.goto('/');
+    await expect(page.locator('#live-section')).toBeHidden();
+    await expect(page.locator('#live-frame iframe')).toHaveCount(0);
+    await page.unroute('**/api/live');
+  }
 });
