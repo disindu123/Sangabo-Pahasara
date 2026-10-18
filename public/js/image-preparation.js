@@ -1,5 +1,5 @@
 const MIN_BYTES = 512 * 1024;
-const MAX_EDGE = 2400;
+const MAX_EDGE = 2048;
 
 // APNG's animation control chunk must precede IDAT. Keep animation intact.
 async function isAnimatedPng(file) {
@@ -47,7 +47,7 @@ export async function prepareImage(file) {
     context.imageSmoothingQuality = 'high';
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     // WebP keeps PNG transparency. Browsers without WebP encoding return PNG.
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.88));
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.84));
     if (!blob || !['image/webp', 'image/png'].includes(blob.type) || blob.size >= file.size * 0.9)
       return file;
     const extension = blob.type === 'image/webp' ? 'webp' : 'png';

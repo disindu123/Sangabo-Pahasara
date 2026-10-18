@@ -3,6 +3,13 @@ import { prepareImage } from './image-preparation.js';
 // Reuse preparation on retry without retaining files after the selection is gone.
 const preparedPhotos = new WeakMap();
 
+// Start locally at selection time; never request a permit or upload until Publish.
+export function preparePhoto(file) {
+  validateImage(file);
+  if (!preparedPhotos.has(file)) preparedPhotos.set(file, prepareImage(file));
+  return preparedPhotos.get(file);
+}
+
 export function validateImage(file) {
   if (
     !file ||
@@ -22,8 +29,7 @@ export async function uploadPhoto(
 ) {
   validateImage(file);
   onStatus('Preparing image…');
-  if (!preparedPhotos.has(file)) preparedPhotos.set(file, prepareImage(file));
-  const uploadFile = await preparedPhotos.get(file);
+  const uploadFile = await preparePhoto(file);
   onStatus('Starting upload…');
   const ticket = await staffApi('/api/uploads/ticket', {
     method: 'POST',

@@ -265,37 +265,61 @@ for (const role of ['teacher', 'student'])
     await expect(page.locator('.featured-event-image')).toBeVisible();
     await expect(page.getByRole('dialog', { name: title })).toBeVisible();
   });
-test('navigation underline follows hover and focus; reduced motion keeps sections visible', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+test('navigation highlights links and animates an accessible responsive menu', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Got it', exact: true }).click();
-  const underline = page.locator('.nav-indicator');
-  const home = await underline.evaluate((node) => getComputedStyle(node).transform);
-  await page.locator('#navigation a[href="/gallery"]').hover();
-  await expect
-    .poll(() => underline.evaluate((node) => getComputedStyle(node).transform))
-    .not.toBe(home);
-  await page.locator('#navigation a[href="/contact"]').focus();
-  await expect(underline).toBeVisible();
-  expect(await underline.evaluate((node) => getComputedStyle(node).transitionDuration)).toBe('0s');
-  expect(
-    await page.locator('.special-event').evaluate((node) => getComputedStyle(node).opacity),
-  ).toBe('1');
+  const nav = page.locator('#navigation');
+  const home = nav.locator('a[href="/"]'),
+    gallery = nav.locator('a[href="/gallery"]'),
+    contact = nav.locator('a[href="/contact"]');
+  const highlight = (link) => link.evaluate((node) => getComputedStyle(node, '::before').opacity);
+  expect(await highlight(home)).toBe('1');
+  expect(await highlight(gallery)).toBe('0');
+  await gallery.hover();
+  await expect.poll(() => highlight(gallery)).toBe('1');
+  await gallery.focus();
+  await page.keyboard.press('Tab');
+  await expect(contact).toBeFocused();
+  await expect.poll(() => highlight(contact)).toBe('1');
+  await expect(nav.locator('.nav-indicator')).toHaveCount(0);
+  for (const width of [320, 390, 768, 800]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(nav).toBeHidden();
+    expect(await nav.evaluate((node) => node.inert)).toBe(true);
+    const toggle = page.getByRole('button', { name: 'Open menu', exact: true });
+    await toggle.click();
+    await expect(nav).toBeVisible();
+    await expect(nav).toHaveCSS('opacity', '1');
+    expect(await nav.evaluate((node) => node.inert)).toBe(false);
+    await contact.focus();
+    await page.keyboard.press('Escape');
+    await expect(nav).toBeHidden();
+    await expect(toggle).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+  await page.setViewportSize({ width: 801, height: 844 });
+  await expect(nav).toHaveCSS('position', 'relative');
+  await expect(nav).toBeVisible();
+  expect(await nav.evaluate((node) => node.inert)).toBe(false);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await home.evaluate((node) => getComputedStyle(node, '::before').transitionDuration)).toBe(
+    '0s',
+  );
+  await expect(page.locator('.special-event')).toHaveCSS('opacity', '1');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-  await expect(page.locator('#navigation')).toBeVisible();
-  expect(
-    await page.locator('#navigation').evaluate((node) => getComputedStyle(node).position),
-  ).toBe('absolute');
-  await page.setViewportSize({ width: 801, height: 844 });
-  await expect(page.locator('.menu-toggle')).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator('#navigation')).toHaveCSS('position', 'relative');
-  await page.setViewportSize({ width: 768, height: 844 });
+  await expect(nav).toHaveCSS('transition-duration', '0s');
+  await page.getByRole('button', { name: 'Close menu', exact: true }).click();
+  await expect(nav).toBeHidden();
+  await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+  await gallery.click();
+  await expect(page).toHaveURL(/\/gallery$/);
   await expect(page.locator('#navigation')).toBeHidden();
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-  await expect(page.locator('#navigation')).toBeVisible();
+  await page.locator('main').click({ position: { x: 10, y: 350 } });
+  await expect(page.locator('#navigation')).toBeHidden();
 });
 
 test('homepage special-event section has no hardcoded fallback when dashboard events are empty', async ({
@@ -552,6 +576,24 @@ async function selectLargePhoto(page, type, rotated = false) {
         ]);
         blob = new Blob([jpeg.slice(0, 2), exif, jpeg.slice(2)], { type });
       }
+      const reference = new Image();
+      const referenceUrl = URL.createObjectURL(blob);
+      try {
+        reference.src = referenceUrl;
+        await reference.decode();
+        const ratio = Math.min(1, 2400 / Math.max(reference.naturalWidth, reference.naturalHeight));
+        canvas.width = Math.round(reference.naturalWidth * ratio);
+        canvas.height = Math.round(reference.naturalHeight * ratio);
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(reference, 0, 0, canvas.width, canvas.height);
+        window.previousPreparedSize = (
+          await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.88))
+        ).size;
+      } finally {
+        URL.revokeObjectURL(referenceUrl);
+      }
       const transfer = new DataTransfer();
       transfer.items.add(
         new File([blob], type === 'image/png' ? 'large.png' : 'phone.jpg', { type }),
@@ -604,9 +646,6 @@ for (const type of ['image/png', 'image/jpeg'])
       });
     });
     await page.goto('/admin/index.html');
-    const originalSize = await selectLargePhoto(page, type, type === 'image/jpeg');
-    expect(originalSize).toBeGreaterThanOrEqual(512 * 1024);
-    expect(originalSize).toBeLessThan(10 * 1024 * 1024);
     await page.evaluate(() => {
       const decode = window.createImageBitmap;
       window.preparationDecodes = 0;
@@ -615,6 +654,25 @@ for (const type of ['image/png', 'image/jpeg'])
         return decode(...args);
       };
     });
+    const originalSize = await selectLargePhoto(page, type, type === 'image/jpeg');
+    expect(originalSize).toBeGreaterThanOrEqual(512 * 1024);
+    expect(originalSize).toBeLessThan(10 * 1024 * 1024);
+    await expect.poll(() => page.evaluate(() => window.preparationDecodes)).toBe(1);
+    const preparation = await page.evaluate(async () => {
+      const { preparePhoto } = await import('/js/upload.js');
+      const file = document.querySelector('#gallery-file').files[0];
+      const first = preparePhoto(file);
+      const prepared = await first;
+      return {
+        samePromise: first === preparePhoto(file),
+        type: prepared.type,
+        size: prepared.size,
+      };
+    });
+    expect(preparation.samePromise).toBe(true);
+    expect(preparation.type).toBe('image/webp');
+    expect(tickets).toHaveLength(0);
+    expect(uploads).toHaveLength(0);
     await page.locator('#gallery-caption').fill(`Prepared ${type} photograph`);
     await page.getByRole('button', { name: 'Publish photograph' }).click();
     if (type === 'image/jpeg') {
@@ -626,6 +684,9 @@ for (const type of ['image/png', 'image/jpeg'])
     await expect(page.locator('#gallery-form .form-status')).toContainText('Saved successfully');
     await expect(page.locator('#admin-gallery-grid')).toContainText(`Prepared ${type} photograph`);
     expect(uploads[0].bytes.length).toBeLessThan(originalSize * 0.9);
+    const previousSize = await page.evaluate(() => window.previousPreparedSize);
+    expect(uploads[0].bytes.length).toBeLessThan(previousSize * 0.85);
+    console.log(`${type}: previous ${previousSize} bytes, now ${uploads[0].bytes.length} bytes`);
     expect(await page.evaluate(() => window.preparationDecodes)).toBe(1);
     if (type === 'image/jpeg') expect(uploads[0].bytes.equals(uploads[1].bytes)).toBe(true);
     const image = await page.evaluate(async (base64) => {
@@ -644,7 +705,7 @@ for (const type of ['image/png', 'image/jpeg'])
       bitmap.close();
       return result;
     }, uploads[0].bytes.toString('base64'));
-    expect([image.width, image.height]).toEqual(type === 'image/png' ? [2400, 720] : [720, 2400]);
+    expect([image.width, image.height]).toEqual(type === 'image/png' ? [2048, 614] : [614, 2048]);
     expect(image.alpha).toBe(type === 'image/png' ? 0 : 255);
   });
 

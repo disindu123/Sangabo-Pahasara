@@ -303,40 +303,56 @@ em {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 6px;
 }
 .navigation > a {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  padding-block: 25px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 6px;
   color: var(--body);
   font-size: 0.875rem;
   white-space: nowrap;
+  transition: color 180ms ease;
+}
+.navigation > a:not(.admin-link)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgb(24 50 71 / 7%);
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms ease-out;
 }
 .navigation > a:hover,
-.navigation > a[aria-current] {
+.navigation > a:focus-visible,
+.navigation > a[aria-current='page'] {
   color: var(--navy);
+}
+.navigation > a:hover::before,
+.navigation > a:focus-visible::before,
+.navigation > a[aria-current='page']::before {
+  opacity: 1;
+  transform: scale(1);
 }
 .navigation .admin-link {
   border-left: 1px solid var(--border);
   padding: 7px 0 7px 24px;
   font-size: 0.8rem;
+  margin-left: 12px;
+  border-radius: 0;
 }
 .admin-link .icon {
   width: 14px;
   height: 14px;
-}
-.nav-indicator {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 2px;
-  background: var(--navy);
-  pointer-events: none;
-  transition:
-    transform 180ms ease,
-    width 180ms ease;
 }
 .menu-toggle {
   display: none;
@@ -1837,7 +1853,7 @@ dialog::backdrop {
     column-gap: 35px;
   }
   .navigation {
-    gap: 22px;
+    gap: 2px;
   }
   .navigation .admin-link {
     padding-left: 18px;
@@ -1876,7 +1892,10 @@ dialog::backdrop {
     display: inline-flex;
   }
   .navigation {
-    display: none;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
     position: absolute;
     top: 100%;
     left: -32px;
@@ -1885,22 +1904,32 @@ dialog::backdrop {
     background: #fff;
     border-bottom: 1px solid var(--border);
     box-shadow: 0 10px 16px rgb(20 35 45 / 5%);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 180ms;
   }
   .navigation.open {
-    display: flex;
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0;
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition-delay: 0s;
   }
   .navigation > a {
-    padding: 12px 0;
+    padding: 12px 14px;
     font-size: 0.95rem;
   }
   .navigation .admin-link {
-    padding: 12px 0;
+    padding: 12px 14px;
     border-left: 0;
     border-top: 1px solid var(--border);
     margin-top: 12px;
+    margin-left: 0;
     font-size: 0.8rem;
   }
   .notification-trigger {

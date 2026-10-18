@@ -1,2 +1,2 @@
-import { setupCommon } from './common.js?v=20261018-team-photo';
+import { setupCommon } from './common.js?v=20261018-nav-upload';
 setupCommon();

@@ -1,4 +1,4 @@
-import { api, getConfig, setStatus } from './common.js?v=20261018-team-photo';
+import { api, getConfig, setStatus } from './common.js?v=20261018-nav-upload';
 import {
   initFirebase,
   signInWithCustomToken,

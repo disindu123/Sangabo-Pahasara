@@ -96,58 +96,33 @@ function setupNavigation() {
   const button = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#navigation');
   if (!button || !nav) return;
-  const links = [...nav.querySelectorAll(':scope > a:not(.admin-link)')];
-  const active = links.find((link) => link.getAttribute('aria-current') === 'page');
-  const indicator = document.createElement('span');
-  indicator.className = 'nav-indicator';
-  indicator.setAttribute('aria-hidden', 'true');
-  nav.append(indicator);
-  nav.classList.add('has-indicator');
-  let selected = active;
-  function move(link = active) {
-    selected = link;
-    if (!link || !nav.getClientRects().length) {
-      indicator.hidden = true;
-      return;
-    }
-    indicator.hidden = false;
-    indicator.style.width = `${link.offsetWidth}px`;
-    indicator.style.transform = `translate(${link.offsetLeft}px, ${link.offsetTop + link.offsetHeight - 2}px)`;
-  }
-  links.forEach((link) => {
-    link.addEventListener('pointerenter', () => move(link));
-    link.addEventListener('focus', () => move(link));
-  });
-  nav.addEventListener('pointerleave', () =>
-    move(links.includes(document.activeElement) ? document.activeElement : active),
-  );
-  nav.addEventListener('focusout', () =>
-    requestAnimationFrame(() =>
-      move(links.includes(document.activeElement) ? document.activeElement : active),
-    ),
-  );
-  new ResizeObserver(() => move(selected)).observe(nav);
-  document.fonts.ready.then(() => move(selected));
-  move();
-  const close = () => {
-    nav.classList.remove('open');
-    button.setAttribute('aria-expanded', 'false');
-    button.setAttribute('aria-label', 'Open menu');
+  const mobile = matchMedia('(max-width: 800px)');
+  const setOpen = (open) => {
+    const expanded = mobile.matches && open;
+    nav.classList.toggle('open', expanded);
+    // Keep a closing/closed mobile menu out of keyboard and assistive navigation.
+    nav.inert = mobile.matches && !expanded;
+    button.setAttribute('aria-expanded', String(expanded));
+    button.setAttribute('aria-label', expanded ? 'Close menu' : 'Open menu');
   };
+  const close = () => setOpen(false);
   button.addEventListener('click', () => {
-    const open = nav.classList.toggle('open');
-    button.setAttribute('aria-expanded', String(open));
-    button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    setOpen(!nav.classList.contains('open'));
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') close();
+    if (event.key === 'Escape' && nav.classList.contains('open')) {
+      close();
+      button.focus();
+    }
   });
   document.addEventListener('click', (event) => {
     if (!nav.contains(event.target) && !button.contains(event.target)) close();
   });
-  matchMedia('(min-width: 801px)').addEventListener('change', (event) => {
-    if (event.matches) close();
+  nav.addEventListener('click', (event) => {
+    if (event.target.closest('a')) close();
   });
+  mobile.addEventListener('change', close);
+  close();
 }
 function renderSocials(social) {
   const names = {
