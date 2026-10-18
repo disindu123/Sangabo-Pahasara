@@ -1,4 +1,3 @@
-import { setupLivePlayer } from './live-player.js';
 import {
   api,
   setupCommon,
@@ -162,16 +161,6 @@ setupSlider().catch(() => {
 setupPreview().catch(() => {
   document.querySelector('#gallery-note').textContent = 'The album is temporarily unavailable.';
 });
-
-async function setupLive() {
-  try {
-    const live = await api('/api/live');
-    setupLivePlayer(live);
-  } catch {
-    /* A live viewer is shown only when published. */
-  }
-}
-setupLive();
 
 async function setupTeamPhoto() {
   try {

@@ -13,6 +13,7 @@ console.log('Firebase browser bundle built.');
 await build({
   entryPoints: [
     'public/js/home.js',
+    'public/js/live-boot.js',
     'public/js/gallery.js',
     'public/js/contact.js',
     'public/js/login.js',
