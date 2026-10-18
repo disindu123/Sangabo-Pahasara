@@ -156,13 +156,12 @@ function renderSocials(social) {
     instagram: 'Instagram',
     youtube: 'YouTube',
     website: 'Official website',
-    email: 'Email SCMU',
   };
   for (const area of document.querySelectorAll('[data-social-links]')) {
     for (const [key, label] of Object.entries(names)) {
       const link = document.createElement(social[key] ? 'a' : 'span');
       link.className = `social-link ${key}`;
-      link.append(icon(key === 'website' ? 'globe' : key === 'email' ? 'mail' : key));
+      link.append(icon(key === 'website' ? 'globe' : key));
       link.setAttribute('aria-label', social[key] ? label : `${label} link coming soon`);
       link.title = social[key] ? label : `${label} link coming soon`;
       if (key === 'website') link.append(document.createTextNode('Official website'));
@@ -216,7 +215,7 @@ export async function setupCommon() {
   setupHeadBoard();
   try {
     const config = await getConfig();
-    renderSocials({ ...config.social, email: `mailto:${config.email}` });
+    renderSocials(config.social);
     for (const logo of document.querySelectorAll('.brand img')) safeImage(logo, config.logoUrl);
   } catch {
     /* The page and form remain usable during a configuration request failure. */

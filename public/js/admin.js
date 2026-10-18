@@ -1,14 +1,13 @@
-import { api, getConfig, icon, safeImage, setStatus } from './common.js?v=20261016-newsroom';
+import { api, getConfig, icon, safeImage, setStatus } from './common.js?v=20261018-team-photo';
 import { initFirebase, onAuthStateChanged, signOut } from './firebase.bundle.js';
 import { uploadPhoto } from './upload.js';
 import { setupDropUpload } from './drop-upload.js';
 
 const $ = (selector) => document.querySelector(selector);
 const forms = Object.fromEntries(
-  ['gallery', 'slider', 'accounts', 'popups', 'live', 'heads', 'settings', 'ips'].map((key) => [
-    key,
-    $(`#${key}-form`),
-  ]),
+  ['gallery', 'slider', 'accounts', 'popups', 'live', 'heads', 'teamPhoto', 'settings', 'ips'].map(
+    (key) => [key, $(`#${key}-form`)],
+  ),
 );
 const tabs = {
   messages: ['Feedback', 'message'],
@@ -18,6 +17,7 @@ const tabs = {
   popups: ['Events', 'bell'],
   live: ['Live', 'play'],
   heads: ['Head board', 'users'],
+  teamPhoto: ['Team photo', 'camera'],
   settings: ['Availability', 'settings'],
   ips: ['IP blocks', 'lock'],
 };
@@ -28,6 +28,7 @@ const paths = {
   accounts: 'accounts',
   popups: 'popups',
   heads: 'media-heads',
+  teamPhoto: 'team-photo',
   ips: 'blocked-ips',
 };
 const roots = {
@@ -306,6 +307,38 @@ async function load(key, refresh = false) {
   const more = $(`[data-more="${key}"]`);
   if (more) more.disabled = true;
   try {
+    if (key === 'teamPhoto') {
+      const photo = await staffApi('/api/team-photo');
+      const root = $('#team-photo-preview');
+      root.replaceChildren();
+      if (photo.imageUrl) {
+        const image = el('img');
+        image.alt = photo.caption || 'Current SCMU team photograph';
+        safeImage(image, photo.imageUrl);
+        root.append(image);
+        if (photo.caption) root.append(el('p', photo.caption));
+        root.append(
+          button(
+            'Remove team photo',
+            async () => {
+              if (!(await confirmRemoval('Remove the team photograph from the About section?')))
+                return;
+              await staffApi('/api/team-photo', { method: 'DELETE' });
+              await load('teamPhoto', true);
+              setStatus(
+                forms.teamPhoto.querySelector('.form-status'),
+                'Team photo removed.',
+                'success',
+              );
+            },
+            'button button-danger',
+          ),
+        );
+      } else root.append(el('p', 'No team photograph published yet.', 'muted'));
+      forms.teamPhoto.elements.caption.value = photo.caption || '';
+      state.loaded = true;
+      return;
+    }
     if (['live', 'settings'].includes(key)) {
       fill(forms[key], await staffApi(`/api/${key}`));
       state.loaded = true;
@@ -418,7 +451,10 @@ function setupForms() {
         let path = `/api/${paths[key] || key}`,
           method = 'POST',
           body;
-        if (['gallery', 'slider'].includes(key)) {
+        if (key === 'teamPhoto') {
+          method = 'PUT';
+          body = { ...(await imageBody(key, form, data)), caption: data.get('caption') || '' };
+        } else if (['gallery', 'slider'].includes(key)) {
           body = { ...(await imageBody(key, form, data)), caption: data.get('caption') || '' };
           if (key === 'gallery')
             Object.assign(body, {

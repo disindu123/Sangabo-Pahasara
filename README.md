@@ -4,13 +4,14 @@ The official SCMU website, designed as a school media archive with off-white bac
 
 ## Included
 
-- Home: the original animated gold Sinhala heading alongside an arched photo slider, six illustrative starter slides, captions, autoplay, arrows, dots, pause, swipe, keyboard controls and reduced-motion support; latest photographs, a concise introduction and a special-event section fully managed through the dashboard.
+- Home: the original animated gold Sinhala heading alongside an arched photo slider, six illustrative starter slides, captions, autoplay, arrows, dots, pause, swipe, keyboard controls and reduced-motion support; latest photographs, a concise introduction with an admin-managed landscape team photo and a special-event section fully managed through the dashboard.
 - Gallery: paginated, lazy-loaded photographs, keyboard/swipe lightbox and albums grouped by their exact Facebook album URL. Each linked album has “View more on Facebook”.
-- Contact: configurable official social channels, YouTube, `sangabopahasara@gmail.com`, and a private feedback form with **Name and Message only**.
+- Contact: configurable official social channels and YouTube, a written `sangabopahasara@gmail.com` link, and a private feedback form with **Name and Message only**. The social icon row has no envelope icon; board-member email links remain available.
 - Head board: President, Secretary, V.President, V.Secretary and Treasurer, with optional photograph and WhatsApp/Facebook/LinkedIn/email SVG links. Empty positions stay hidden.
 - Events: once-per-browser pop-up for the latest new event and a persistent, paginated notification list. Optional images.
 - Live: a viewer appears only when an Admin publishes an exact YouTube or public Facebook video URL. Includes a direct platform link if embedding is unavailable.
-- Staff workspace: accounts, feedback, photographs, slider ordering, events, live status, board, maintenance and IP blocks, subject to roles below.
+- Staff workspace: accounts, feedback, photographs, slider ordering, events, live status, board, team photo, maintenance and IP blocks, subject to roles below.
+- Login: the original full-height navy-and-gold split layout, with a gold Sinhala heading and a responsive staff sign-in form.
 
 ## Roles
 
@@ -22,6 +23,7 @@ The official SCMU website, designed as a school media archive with off-white bac
 | View private feedback                                             | Yes   | Yes     | No      |
 | Delete feedback or photographs; edit captions/order/albums        | Yes   | No      | No      |
 | Create/edit/delete/disable accounts; change roles/passwords       | Yes   | No      | No      |
+| Publish/replace/remove the About team photo                       | Yes   | No      | No      |
 | Publish events with an optional photo                             | Yes   | Yes     | Yes     |
 | Manage board, edit/delete events, live, maintenance and IP blocks | Yes   | No      | No      |
 
@@ -97,6 +99,7 @@ It is a trusted operator tool, not a public endpoint. The dashboard prevents sel
 3. Add **5–7 homepage slides**, with order numbers. The supplied local education photos are clearly marked as illustrative until replaced; they are not representations of real SCMU events. Optional `npm run seed:slider` copies the six illustrative photos into Cloudinary and Firestore only if the slider is empty.
 4. Fill `SOCIAL_FACEBOOK`, `SOCIAL_TIKTOK` and `SOCIAL_INSTAGRAM` in the host environment. Unknown links are disabled, rather than guessed. The supplied YouTube channel is already set. Confirm `SCHOOL_WEBSITE` and replace the existing landscape `public/assets/scmu-logo.svg` with the approved logo or set `LOGO_URL`.
 5. Publish event notices and live broadcasts only when ready. All staff roles can publish events with an image upload or URL. The newest event replaces the homepage special-event content; only Admins can edit or delete notices. A new event ID is shown once on that browser; cleared local storage or another device can show it again. The homepage special-event section stays hidden until a dashboard event is published; its title, description and optional photo come entirely from that event.
+6. Open **Dashboard → Team photo** as an Admin. Drag in a photograph, use the file picker or enter an HTTPS image URL, optionally add a caption, and choose **Publish team photo**. A 16:9 landscape image is recommended; the frame preserves the whole photograph without cropping. It appears under “The school’s media unit.” in About. Publishing again replaces it; **Remove team photo** hides it. Teachers and Students cannot upload to or manage this section.
 
 Photos provided by URL remain on their original host; file uploads use Cloudinary. Deleting a URL-based post does not delete the original external file. Each published upload keeps its owned `storagePath`; only owned uploads can be removed. New managed images use `cloudinary/scmu/...` paths. Existing Firebase managed paths retain server-only deletion support if their original bucket is configured.
 
@@ -157,6 +160,7 @@ All timestamps are Firestore `Timestamp` values; the API serialises them to ISO 
 | `settings/site`               | `maintenanceMode`                                                                                                               |
 | `blockedIPs/{sha256(ip)}`     | canonical `ip`, `reason`, `blockedAt`                                                                                           |
 | `mediaHeads/{position-slug}`  | `role`, `name`, `whatsapp`, `facebook`, `linkedin`, `gmail`, `photoUrl`; optional `storagePath`, `createdAt`                    |
+| `teamPhoto/current`           | `imageUrl`, `caption`, `storagePath`, `createdAt`; only image and caption are exposed publicly                                  |
 | `_uploads/{ticket}`           | upload owner, collection, path, content type/size, expiry, consumption and published document reference                         |
 | `_loginAttempts/{sha256(ip)}` | failure count, window, nonce and lease                                                                                          |
 | `_rateLimits/{HMAC}`          | private feedback quota and expiry                                                                                               |
@@ -168,27 +172,28 @@ The supplied Firestore indexes use the automatic single-field indexes. Paginated
 
 Send JSON for writes. Staff requests need `Authorization: Bearer <Firebase ID token>`. Errors use `{ "error": { "code": "...", "message": "..." } }`. Collections return `{ items, nextCursor }` (slider/board have no cursor). Use `?limit=24&cursor=...`; limits are 1–100. Upload registration takes **either** `ticketId` from the upload flow **or** an HTTPS image URL.
 
-| Method / route                                                  | Access / action                                                                                          |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `GET /api/config`, `GET /api/health`                            | Public safe configuration and presence status                                                            |
-| `GET /api/auth/status`                                          | Checks the requesting IP block                                                                           |
-| `POST /api/auth/login`                                          | Server verifies `{email,password}`, counts failures, returns short-lived Firebase custom token           |
-| `GET /api/admin/me`, `GET /api/admin/stats`                     | Any active staff; stats filtered by role                                                                 |
-| `POST /api/messages`                                            | Public `{name,message}`; private, rate-limited feedback                                                  |
-| `GET /api/messages`, `DELETE /api/messages/:id`                 | Admin/Teacher read; Admin delete                                                                         |
-| `GET /api/gallery`, `POST /api/gallery`                         | Public read; any staff adds `{ticketId OR imageUrl, caption?, albumTitle?, facebookAlbumUrl?}`           |
-| `PATCH /api/gallery/:id`, `DELETE /api/gallery/:id`             | Admin edits caption/album metadata or removes                                                            |
-| `GET /api/slider`, `POST /api/slider`                           | Public read; Admin/Teacher adds `{ticketId OR imageUrl, order, caption?}`                                |
-| `PATCH /api/slider/:id`, `DELETE /api/slider/:id`               | Admin changes caption/order or removes                                                                   |
-| `POST /api/uploads/ticket`                                      | Role-appropriate staff requests `{collection, contentType, size}` before direct signed Cloudinary upload |
-| `GET/POST /api/accounts`                                        | Admin lists/creates `{email,password,displayName?,role}`                                                 |
-| `PATCH/DELETE /api/accounts/:uid`                               | Admin edits email/name/password/role/disabled or deletes                                                 |
-| `GET/POST /api/popups`                                          | Public read; all staff roles create `{title,message,ticketId OR imageUrl?}`                              |
-| `PATCH/DELETE /api/popups/:id`                                  | Admin edits text or deletes event                                                                        |
-| `GET/PUT /api/live`                                             | Public read; Admin sets `{platform,url,isLive}`                                                          |
-| `GET/PUT /api/settings`                                         | Public maintenance status; Admin sets `{maintenanceMode}`                                                |
-| `GET/POST /api/blocked-ips`, `DELETE /api/blocked-ips/:ip`      | Admin list/block `{ip,reason}`/unblock (URL-encode IPv6)                                                 |
-| `GET /api/media-heads`, `PUT/DELETE /api/media-heads/:position` | Public read; Admin sets/removes fixed board positions                                                    |
+| Method / route                                                  | Access / action                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `GET /api/config`, `GET /api/health`                            | Public safe configuration and presence status                                                                 |
+| `GET /api/auth/status`                                          | Checks the requesting IP block                                                                                |
+| `POST /api/auth/login`                                          | Server verifies `{email,password}`, counts failures, returns short-lived Firebase custom token                |
+| `GET /api/admin/me`, `GET /api/admin/stats`                     | Any active staff; stats filtered by role                                                                      |
+| `POST /api/messages`                                            | Public `{name,message}`; private, rate-limited feedback                                                       |
+| `GET /api/messages`, `DELETE /api/messages/:id`                 | Admin/Teacher read; Admin delete                                                                              |
+| `GET /api/gallery`, `POST /api/gallery`                         | Public read; any staff adds `{ticketId OR imageUrl, caption?, albumTitle?, facebookAlbumUrl?}`                |
+| `PATCH /api/gallery/:id`, `DELETE /api/gallery/:id`             | Admin edits caption/album metadata or removes                                                                 |
+| `GET /api/slider`, `POST /api/slider`                           | Public read; Admin/Teacher adds `{ticketId OR imageUrl, order, caption?}`                                     |
+| `PATCH /api/slider/:id`, `DELETE /api/slider/:id`               | Admin changes caption/order or removes                                                                        |
+| `POST /api/uploads/ticket`                                      | Role-appropriate staff requests `{collection, contentType, size}` before direct signed Cloudinary upload      |
+| `GET/POST /api/accounts`                                        | Admin lists/creates `{email,password,displayName?,role}`                                                      |
+| `PATCH/DELETE /api/accounts/:uid`                               | Admin edits email/name/password/role/disabled or deletes                                                      |
+| `GET/POST /api/popups`                                          | Public read; all staff roles create `{title,message,ticketId OR imageUrl?}`                                   |
+| `PATCH/DELETE /api/popups/:id`                                  | Admin edits text or deletes event                                                                             |
+| `GET/PUT /api/live`                                             | Public read; Admin sets `{platform,url,isLive}`                                                               |
+| `GET/PUT /api/settings`                                         | Public maintenance status; Admin sets `{maintenanceMode}`                                                     |
+| `GET/POST /api/blocked-ips`, `DELETE /api/blocked-ips/:ip`      | Admin list/block `{ip,reason}`/unblock (URL-encode IPv6)                                                      |
+| `GET/PUT/DELETE /api/team-photo`                                | Public read; Admin publishes/replaces `{ticketId OR imageUrl, caption?}` or removes the singleton About photo |
+| `GET /api/media-heads`, `PUT/DELETE /api/media-heads/:position` | Public read; Admin sets/removes fixed board positions                                                         |
 
 Public/Student gallery JSON omits uploader, email and posted timestamp. Admin/Teacher dashboard requests retrieve them. Public photo URLs and board contacts are intentionally public.
 
@@ -222,6 +227,6 @@ Before a public launch, verify actual credentials, Cloudinary uploads/deletion, 
 
 Navigation uses a moving underline for hover and keyboard focus. The gold heading shimmer, button feedback, slideshow fades and brief dialog transitions respect `prefers-reduced-motion`. Content remains visible without entrance effects or JavaScript. English uses the system sans-serif stack and Sinhala body text uses the existing self-hosted Noto Sans Sinhala font. The homepage title restores the original self-hosted Abhaya Libre face with a gold gradient, fine outline and travelling highlight. Its slider sits alongside the text on desktop and below it on phones. The entire public footer, including the copyright row, uses a deep-blue background with light text. The default logo is the existing SCMU favicon, with the `LOGO_URL` override retained. Login, dashboard, maintenance and error screens share the same typography and spacing. All stylesheets carry updated asset versions so older cached styles cannot hide changes.
 
-All dashboard image controls (gallery, slider, special events and head board) support dragging one image onto the upload area. They show a local preview and filename, support removing/replacing a selection, and reject unsupported or oversized files before uploading. The keyboard-accessible native picker remains available on mobile. Files are uploaded to Cloudinary when you submit the form.
+All dashboard image controls (gallery, slider, special events, head board and the admin-only team photo) support dragging one image onto the upload area. They show a local preview and filename, support removing/replacing a selection, and reject unsupported or oversized files before uploading. The keyboard-accessible native picker remains available on mobile. Files are uploaded to Cloudinary when you submit the form.
 
 For faster uploads, JPEG/PNG files of 512 KB or more are prepared in the browser: the longest edge is limited to 2400 px without cropping or upscaling, and WebP is encoded at 88% quality with transparency preserved. The prepared file is used only if it saves at least 10% of the original bytes. Small images, GIF, WebP and animated PNG stay unchanged; if preparation fails, the original file is uploaded. The 10 MB input limit still applies. Preparation is reused when retrying the same selection. The signed permit uses the actual prepared MIME type and byte count, and the backend still verifies the Cloudinary asset before publication. Upload time also depends on connection speed and provider latency. List and count refreshes run concurrently after saving.

@@ -122,7 +122,7 @@ test('gallery groups exact albums and opens a keyboard lightbox with inert capti
   expect(await page.locator('.photo-card .photo-caption img').count()).toBe(0);
 });
 for (const [role, count] of [
-  ['admin', 9],
+  ['admin', 10],
   ['teacher', 4],
   ['student', 2],
 ])
@@ -135,6 +135,8 @@ for (const [role, count] of [
     await page.goto('/admin/index.html');
     await expect(page.locator('#staff-role')).toHaveText(role);
     await expect(page.getByRole('tab')).toHaveCount(count);
+    if (role !== 'admin')
+      await expect(page.getByRole('tab', { name: 'Team photo', exact: true })).toHaveCount(0);
     await page.getByRole('tab', { name: 'Gallery', exact: true }).click();
     await expect(page.locator('#admin-gallery-grid .admin-content-card')).toHaveCount(4);
     if (role === 'student') {
@@ -730,4 +732,59 @@ test('successful publishing starts list and count refreshes concurrently', async
   }
   await expect(page.locator('#admin-gallery-grid')).toContainText('Parallel refresh');
   await expect(page.getByRole('button', { name: 'Publish photograph' })).toBeEnabled();
+});
+
+test('Admin manages the landscape About team photo while public social rows omit the email icon', async ({
+  page,
+}) => {
+  await staffFixture(page, 'admin');
+  await page.goto('/admin/index.html');
+  await page.getByRole('tab', { name: 'Team photo', exact: true }).click();
+  await expect(page.locator('#team-photo-preview')).toContainText('No team photograph');
+  await dropFiles(page, 'team-photo-file', [{ name: 'scmu-team.png', type: 'image/png' }]);
+  await page.locator('#team-photo-form-caption').fill('SCMU team photograph');
+  const permit = page.waitForRequest((r) => r.url().endsWith('/api/uploads/ticket'));
+  await page.getByRole('button', { name: 'Publish team photo', exact: true }).click();
+  expect((await permit).postDataJSON().collection).toBe('teamPhoto');
+  await expect(page.locator('#teamPhoto-form .form-status')).toContainText('Saved successfully');
+  await expect(page.locator('#team-photo-preview > img')).toHaveAttribute(
+    'src',
+    'https://images.example/upload.jpg',
+  );
+  await page.goto('/');
+  const dismiss = page.getByRole('button', { name: 'Got it', exact: true });
+  if (await dismiss.count()) await dismiss.click();
+  await expect(page.locator('#about-team-photo')).toBeVisible();
+  await expect(page.locator('#team-photo-caption')).toHaveText('SCMU team photograph');
+  await expect(page.locator('#team-photo-image')).toHaveAttribute(
+    'src',
+    'https://images.example/upload.jpg',
+  );
+  await page.locator('.introduction').scrollIntoViewIfNeeded();
+  const ratio = await page
+    .locator('#team-photo-image')
+    .evaluate((img) => img.clientWidth / img.clientHeight);
+  expect(ratio).toBeCloseTo(16 / 9, 1);
+  await expect(page.locator('.social-links .social-link.email')).toHaveCount(0);
+  await expect(page.locator('.social-links use[href="/assets/icons.svg#mail"]')).toHaveCount(0);
+  expect(await page.locator('a[href="mailto:sangabopahasara@gmail.com"]').count()).toBeGreaterThan(
+    0,
+  );
+  await page.locator('.introduction').screenshot({ path: 'test-results/about-team-photo.png' });
+  await page.goto('/admin/index.html');
+  await page.getByRole('tab', { name: 'Team photo', exact: true }).click();
+  await page.locator('#team-photo-url').fill('https://images.example/replacement-team.jpg');
+  await page.locator('#team-photo-form-caption').fill('Updated team photograph');
+  await page.getByRole('button', { name: 'Publish team photo', exact: true }).click();
+  await expect(page.locator('#teamPhoto-form .form-status')).toContainText('Saved successfully');
+  await expect(page.locator('#team-photo-preview > img')).toHaveAttribute(
+    'src',
+    'https://images.example/replacement-team.jpg',
+  );
+  await page.getByRole('button', { name: 'Remove team photo', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove', exact: true }).click();
+  await expect(page.locator('#teamPhoto-form .form-status')).toContainText('Team photo removed');
+  await expect(page.locator('#team-photo-preview')).toContainText('No team photograph');
+  await page.goto('/');
+  await expect(page.locator('#about-team-photo')).toBeHidden();
 });

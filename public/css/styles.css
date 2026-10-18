@@ -609,6 +609,31 @@ em {
 .intro-body {
   max-width: 680px;
 }
+.about-team-photo {
+  margin-top: 28px;
+}
+.about-team-photo img,
+.team-photo-preview > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: var(--light);
+}
+.about-team-photo figcaption {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--body);
+  overflow-wrap: anywhere;
+}
+.team-photo-preview > img {
+  max-width: 680px;
+  margin-bottom: 16px;
+}
+.team-photo-preview > p {
+  overflow-wrap: anywhere;
+}
 .sinhala-copy {
   font-size: 0.95rem;
   line-height: 2;
@@ -1258,39 +1283,62 @@ dialog::backdrop {
 }
 .login-shell {
   display: grid;
-  grid-template-columns: 0.9fr 1fr;
-  width: min(1040px, calc(100% - 96px));
-  margin: 60px auto;
-  border: 1px solid var(--border);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  min-height: calc(100dvh - 88px);
+  margin: 0;
+  border: 0;
   background: #fff;
 }
 .login-art {
-  background: var(--navy);
-  padding: 55px 40px;
+  background: #0b2143;
+  padding: 75px max(40px, calc((100vw - 1200px) / 2));
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 .login-art .eyebrow {
-  color: #c1cbd2;
-  font-size: 0.65rem;
+  color: #dfc484;
+  font-size: 0.7rem;
 }
 .login-art h1 {
-  font-family: 'Noto Sans Sinhala', sans-serif;
-  font-size: 2.8rem;
-  line-height: 1.85;
-  color: #fff;
-  margin-block: 12px 24px;
+  font-family: 'Abhaya Libre', 'Noto Sans Sinhala', serif;
+  font-size: clamp(3.2rem, 5vw, 5rem);
+  font-weight: 800;
+  line-height: 1.3;
+  color: #dfc484;
+  margin-block: 28px;
   letter-spacing: 0;
 }
 .login-art > p:last-child {
-  color: #d2dae0;
+  color: #c2cede;
   font-size: 0.95rem;
   margin-bottom: 0;
-  max-width: 260px;
+  max-width: 400px;
+}
+.login-art .section-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border: 1px solid #40506b;
+  border-radius: 12px;
+  color: #dfc484;
+  margin-bottom: 24px;
+}
+.login-art .section-icon .icon {
+  width: 30px;
+  height: 30px;
 }
 .login-form-wrap {
-  padding: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 55px 40px;
+}
+.login-form-inner {
+  width: 100%;
+  max-width: 420px;
 }
 .login-form-inner h2 {
   font-size: 1.85rem;
@@ -1804,7 +1852,7 @@ dialog::backdrop {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .login-shell {
-    width: calc(100% - 64px);
+    width: 100%;
   }
   .login-form-wrap {
     padding: 34px;
@@ -1919,14 +1967,14 @@ dialog::backdrop {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .login-shell {
-    grid-template-columns: 0.75fr 1fr;
-    margin-top: 35px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
   }
   .login-art {
     padding: 30px;
   }
   .login-art h1 {
-    font-size: 2.2rem;
+    font-size: 3.2rem;
   }
   .login-form-wrap {
     padding: 30px;
@@ -2184,15 +2232,16 @@ dialog::backdrop {
     padding-block: 20px;
   }
   .login-shell {
-    width: calc(100% - 40px);
+    width: 100%;
     grid-template-columns: 1fr;
-    margin-block: 25px 40px;
+    min-height: calc(100dvh - 76px);
+    margin: 0;
   }
   .login-art {
     display: none;
   }
   .login-form-wrap {
-    padding: 28px 23px;
+    padding: 40px 24px;
   }
   .login-form-inner h2 {
     font-size: 1.7rem;
