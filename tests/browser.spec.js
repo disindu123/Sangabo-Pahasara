@@ -1,4 +1,5 @@
 import { test as base, expect, chromium } from '@playwright/test';
+import { liveSdkFixture } from './live-fixture.js';
 // Start a fresh browser per scenario; this also supports headless-shell runtimes.
 const test = base.extend({
   page: async ({ launchOptions, baseURL }, use) => {
@@ -48,6 +49,15 @@ test.beforeEach(async ({ page }) => {
   );
   await page.route('https://images.example/**', (route) =>
     route.fulfill({ path: 'public/assets/photos/classroom.jpg', contentType: 'image/jpeg' }),
+  );
+  await page.route('https://www.youtube.com/iframe_api', (route) =>
+    route.fulfill({ contentType: 'text/javascript', body: liveSdkFixture() }),
+  );
+  await page.route('https://connect.facebook.net/en_US/sdk.js', (route) =>
+    route.fulfill({ contentType: 'text/javascript', body: liveSdkFixture(true) }),
+  );
+  await page.route('https://www.facebook.com/plugins/video.php?*', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<html>Facebook player fixture</html>' }),
   );
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
     route.fulfill({
@@ -850,110 +860,162 @@ test('Admin manages the landscape About team photo while public social rows omit
   await expect(page.locator('#about-team-photo')).toBeHidden();
 });
 
+async function publishedLive(page, platform = 'youtube') {
+  const live =
+    platform === 'youtube'
+      ? {
+          platform,
+          url: 'https://youtu.be/dQw4w9WgXcQ',
+          embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+        }
+      : {
+          platform,
+          url: 'https://www.facebook.com/scmu/videos/123/',
+          embedUrl:
+            'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fscmu%2Fvideos%2F123%2F&show_text=false',
+        };
+  await page.route('**/api/live', (route) => route.fulfill({ json: { isLive: true, ...live } }));
+}
+
 for (const platform of ['youtube', 'facebook']) {
-  for (const width of [1440, 390]) {
-    test(`${platform} live autoplay waits for scrolling into view at ${width}px and loads only once`, async ({
+  for (const width of [1440, 390, 320]) {
+    test(`${platform} preloads before scrolling and requests audio on entry at ${width}px`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      const requests = [];
-      const embedUrl =
-        platform === 'youtube'
-          ? 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
-          : 'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fscmu%2Fvideos%2F123%2F&show_text=false';
-      await page.route('**/api/live', (route) =>
-        route.fulfill({
-          json: {
-            isLive: true,
-            platform,
-            embedUrl,
-            url:
-              platform === 'youtube'
-                ? 'https://youtu.be/dQw4w9WgXcQ'
-                : 'https://www.facebook.com/scmu/videos/123/',
-          },
-        }),
-      );
+      await publishedLive(page, platform);
+      const sources = [];
       await page.route(
         platform === 'youtube'
           ? 'https://www.youtube-nocookie.com/**'
           : 'https://www.facebook.com/plugins/video.php?*',
         (route) => {
-          requests.push(new URL(route.request().url()));
+          sources.push(new URL(route.request().url()));
           return route.fulfill({
             contentType: 'text/html',
-            body: '<html><body>Live player fixture</body></html>',
+            body: '<html>Prepared player fixture</html>',
           });
         },
       );
       await page.goto('/');
       await page.getByRole('button', { name: 'Got it', exact: true }).click();
-      const frame = page.locator('#live-frame iframe');
-      await expect(frame).toHaveCount(1);
-      await expect(frame).not.toHaveAttribute('src');
-      expect(requests).toHaveLength(0);
-      const source = frame.locator('..');
-      // A small visible strip does not start the stream prematurely.
-      await source.evaluate((node) => {
-        const y = node.getBoundingClientRect().top + scrollY;
-        window.scrollTo({ top: y - innerHeight + 20, behavior: 'instant' });
-      });
-      await expect
-        .poll(() =>
-          source.evaluate((node) => {
-            const box = node.getBoundingClientRect();
-            return box.top < innerHeight && box.top > innerHeight - 40;
-          }),
-        )
-        .toBe(true);
-      await expect(frame).not.toHaveAttribute('src');
-      expect(requests).toHaveLength(0);
-      await source.scrollIntoViewIfNeeded();
-      await expect.poll(() => requests.length).toBe(1);
-      const params = requests[0].searchParams;
-      expect(params.get('autoplay')).toBe(platform === 'youtube' ? '1' : 'true');
+      await expect(page.locator('#live-play')).toBeEnabled();
+      await expect.poll(() => sources.length).toBe(1);
+      expect(sources[0].searchParams.get('autoplay')).toBe(platform === 'youtube' ? '0' : 'false');
+      expect(sources[0].searchParams.get('mute')).toBe('0');
+      expect(await page.evaluate(() => liveFixture.commands)).toEqual([]);
       if (platform === 'youtube') {
-        expect(params.get('mute')).toBe('1');
-        expect(params.get('playsinline')).toBe('1');
-      } else {
-        expect(params.get('href')).toBe('https://www.facebook.com/scmu/videos/123/');
-        expect(params.get('show_text')).toBe('false');
+        expect(sources[0].searchParams.get('enablejsapi')).toBe('1');
+        expect(sources[0].searchParams.get('origin')).toBe('http://127.0.0.1:9080');
+        expect(sources[0].searchParams.get('playsinline')).toBe('1');
       }
-      await expect(frame).toHaveAttribute('allow', /autoplay/);
-      await expect(frame).toHaveAttribute('title', 'SCMU live broadcast');
-      const src = await frame.getAttribute('src');
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      const viewer = page.locator('#live-frame');
+      await viewer.evaluate((node) =>
+        window.scrollTo({
+          top: node.getBoundingClientRect().top + scrollY - innerHeight + 15,
+          behavior: 'instant',
+        }),
+      );
+      await expect
+        .poll(() => viewer.evaluate((node) => node.getBoundingClientRect().top < innerHeight))
+        .toBe(true);
+      expect(await page.evaluate(() => liveFixture.commands)).toEqual([]);
+      await viewer.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() => page.evaluate(() => liveFixture.commands.map((c) => c.action)))
+        .toEqual(['unmute', 'play']);
+      await expect(page.locator('#live-status')).toContainText('Live broadcast playing');
+      await expect(page.locator('#live-play')).toBeHidden();
+      await expect(page.locator('#live-frame iframe')).toHaveAttribute('allow', /autoplay/);
+      await page.evaluate(() => liveFixture.pause());
+      await expect(page.locator('#live-play')).toBeVisible();
       await page.locator('#hero-title').scrollIntoViewIfNeeded();
-      await source.scrollIntoViewIfNeeded();
-      await expect(frame).toHaveAttribute('src', src);
-      expect(requests).toHaveLength(1);
-      await expect(page.locator('#live-link')).toHaveAttribute('target', '_blank');
+      await viewer.scrollIntoViewIfNeeded();
+      expect(sources).toHaveLength(1);
+      expect(await page.evaluate(() => liveFixture.commands.length)).toBe(2);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
     });
   }
+  test(`${platform} blocked audio has a working play-with-sound button`, async ({ page }) => {
+    await page.addInitScript(() => {
+      window.blockLiveAutoplay = true;
+    });
+    await publishedLive(page, platform);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Got it', exact: true }).click();
+    await expect(page.locator('#live-play')).toBeEnabled();
+    await page.locator('#live-frame').scrollIntoViewIfNeeded();
+    await expect.poll(() => page.evaluate(() => liveFixture.commands.length)).toBe(2);
+    await expect(page.locator('#live-play')).toBeVisible();
+    await page.getByRole('button', { name: 'Play with sound', exact: true }).click();
+    await expect(page.locator('#live-status')).toContainText('Live broadcast playing');
+    expect(await page.evaluate(() => liveFixture.commands.at(-1).userActive)).toBe(true);
+    expect(await page.evaluate(() => liveFixture.commands.map((c) => c.action))).toEqual([
+      'unmute',
+      'play',
+      'unmute',
+      'play',
+    ]);
+  });
+  test(`${platform} SDK failure retains native controls and external broadcast link`, async ({
+    page,
+  }) => {
+    await publishedLive(page, platform);
+    await page.route(
+      platform === 'youtube'
+        ? 'https://www.youtube.com/iframe_api'
+        : 'https://connect.facebook.net/en_US/sdk.js',
+      (route) => route.abort(),
+    );
+    await page.goto('/');
+    await expect(page.locator('#live-status')).toContainText('Press Play in the video player');
+    await expect(page.locator('#live-frame iframe')).toHaveAttribute('src', /autoplay=(0|false)/);
+    await expect(page.locator('#live-play')).toBeHidden();
+    await expect(page.locator('#live-link')).toHaveAttribute('href', /^https:\/\//);
+  });
 }
 
-test('live viewer retains manual playback without IntersectionObserver', async ({ page }) => {
-  await page.route('**/api/live', (route) =>
-    route.fulfill({
-      json: {
-        isLive: true,
-        platform: 'youtube',
-        url: 'https://youtu.be/dQw4w9WgXcQ',
-        embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
-      },
-    }),
+test('live waits for readiness and never starts after scrolling away before ready', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.holdLiveReady = true;
+  });
+  await publishedLive(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Got it', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => !!window.liveFixture?.ready)).toBe(true);
+  await page.locator('#live-frame').scrollIntoViewIfNeeded();
+  await page.locator('#hero-title').scrollIntoViewIfNeeded();
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
   );
+  await page.evaluate(() => liveFixture.ready());
+  await expect(page.locator('#live-play')).toBeEnabled();
+  expect(await page.evaluate(() => liveFixture.commands)).toEqual([]);
+  await page.locator('#live-frame').scrollIntoViewIfNeeded();
+  await expect.poll(() => page.evaluate(() => liveFixture.commands.length)).toBe(2);
+});
+
+test('without IntersectionObserver the live player remains manual with sound available', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     delete window.IntersectionObserver;
   });
+  await publishedLive(page);
   await page.goto('/');
-  const frame = page.locator('#live-frame iframe');
-  await expect(frame).toHaveAttribute('src', /autoplay=0/);
-  await expect(page.locator('#live-link')).toHaveAttribute('href', 'https://youtu.be/dQw4w9WgXcQ');
+  await page.getByRole('button', { name: 'Got it', exact: true }).click();
+  await expect(page.locator('#live-play')).toBeEnabled();
+  expect(await page.evaluate(() => liveFixture.commands)).toEqual([]);
+  await page.getByRole('button', { name: 'Play with sound', exact: true }).click();
+  await expect(page.locator('#live-status')).toContainText('Live broadcast playing');
 });
 
-test('unpublished or untrusted live sources stay hidden and do not load a player', async ({
+test('unpublished or untrusted live sources stay hidden and do not load player SDKs', async ({
   page,
 }) => {
   for (const live of [
@@ -964,6 +1026,32 @@ test('unpublished or untrusted live sources stay hidden and do not load a player
     await page.goto('/');
     await expect(page.locator('#live-section')).toBeHidden();
     await expect(page.locator('#live-frame iframe')).toHaveCount(0);
+    await expect(
+      page.locator(
+        'script[src="https://www.youtube.com/iframe_api"],script[src="https://connect.facebook.net/en_US/sdk.js"]',
+      ),
+    ).toHaveCount(0);
     await page.unroute('**/api/live');
   }
 });
+
+for (const platform of ['youtube', 'facebook']) {
+  test(`${platform} readiness timeout leaves a manual player and ignores late readiness`, async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await page.addInitScript(() => {
+      window.holdLiveReady = true;
+    });
+    await publishedLive(page, platform);
+    await page.goto('/');
+    await expect.poll(() => page.evaluate(() => !!window.liveFixture?.ready)).toBe(true);
+    await page.clock.runFor(12_100);
+    await expect(page.locator('#live-status')).toContainText('Press Play in the video player');
+    await expect(page.locator('#live-frame iframe')).toHaveCount(1);
+    await expect(page.locator('#live-play')).toBeHidden();
+    await page.evaluate(() => liveFixture.ready());
+    await expect(page.locator('#live-play')).toBeHidden();
+    expect(await page.evaluate(() => liveFixture.commands)).toEqual([]);
+  });
+}

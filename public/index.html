@@ -12,8 +12,8 @@
     <meta name="theme-color" content="#183247" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/css/fonts.css?v=20261018-nav-upload" />
-    <link rel="stylesheet" href="/css/styles.css?v=20261018-mobile-center" />
-    <script type="module" src="/js/home.js?v=20261018-live-scroll"></script>
+    <link rel="stylesheet" href="/css/styles.css?v=20261018-live-audio" />
+    <script type="module" src="/js/home.js?v=20261018-live-audio"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -182,14 +182,22 @@
             <p class="eyebrow"><span class="live-dot"></span> On air</p>
             <h2 id="live-title">Live broadcast</h2>
           </div>
-          <a class="button button-outline" id="live-link" target="_blank" rel="noopener noreferrer"
-            >Watch on platform</a
-          >
+          <div class="button-row">
+            <button class="button button-primary" type="button" id="live-play" disabled>
+              Play with sound
+            </button>
+            <a
+              class="button button-outline"
+              id="live-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Watch on platform</a
+            >
+          </div>
         </div>
         <div class="live-frame" id="live-frame"></div>
-        <p class="muted">
-          The broadcast starts muted when it comes into view. Use the player controls for sound. If
-          it does not play, press Play or choose “Watch on platform”.
+        <p class="muted" id="live-status" role="status" aria-live="polite">
+          Preparing the live broadcast…
         </p>
       </section>
       <section

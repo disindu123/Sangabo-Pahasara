@@ -730,12 +730,20 @@ em {
 }
 .live-frame {
   background: #16232d;
+  width: 100%;
   aspect-ratio: 16 / 9;
+  min-height: 200px;
+}
+.live-frame .fb-video,
+.live-frame .fb-video > span {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 .live-frame iframe {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
   border: 0;
 }
 .live-section > p {
