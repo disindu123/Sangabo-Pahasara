@@ -430,3 +430,135 @@ test('Admin publishes, replaces and removes the public team photo with private m
   );
   assert.deepEqual((await request('/api/team-photo')).body, { imageUrl: '', caption: '' });
 });
+
+test(
+  'homepage reads live and maintenance concurrently and emits only safe public metadata',
+  { timeout: 2000 },
+  async () => {
+    const getSettings = store.getSettings,
+      getLive = store.getLive;
+    let settingsStarted, liveStarted, release;
+    const startedSettings = new Promise((resolve) => {
+      settingsStarted = resolve;
+    });
+    const startedLive = new Promise((resolve) => {
+      liveStarted = resolve;
+    });
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    store.getSettings = async () => {
+      settingsStarted();
+      await gate;
+      return { maintenanceMode: false };
+    };
+    store.getLive = async () => {
+      liveStarted();
+      await gate;
+      return {
+        isLive: true,
+        platform: 'youtube',
+        url: 'https://youtu.be/dQw4w9WgXcQ',
+        privateField: 'do-not-expose',
+      };
+    };
+    const pending = fetch(origin + '/');
+    try {
+      await Promise.all([startedSettings, startedLive]);
+      release();
+      const response = await pending,
+        body = await response.text();
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      assert.ok(
+        response.headers
+          .get('link')
+          .includes('<https://www.youtube.com/iframe_api>; rel=preload; as=script'),
+      );
+      assert.ok(body.includes('name="scmu-live"'));
+      assert.ok(body.includes('&quot;isLive&quot;:true'));
+      assert.ok(!body.includes('do-not-expose'));
+      assert.ok(!body.includes('privateField'));
+    } finally {
+      release();
+      store.getSettings = getSettings;
+      store.getLive = getLive;
+    }
+  },
+);
+
+test('homepage bootstrap escapes HTML, stays fresh and does not leak through maintenance', async () => {
+  const getLive = store.getLive;
+  try {
+    store.getLive = async () => ({
+      isLive: true,
+      platform: 'facebook',
+      url: 'https://www.facebook.com/scmu/videos/123/?q=\'<script>"&x=1',
+    });
+    let response = await fetch(origin + '/index.html'),
+      body = await response.text();
+    assert.equal(response.status, 200);
+    assert.ok(body.includes('name="scmu-live"'));
+    assert.ok(body.includes('&amp;x=1'));
+    assert.ok(!body.includes("q='<script>"));
+    assert.ok(response.headers.get('link').includes('connect.facebook.net/en_US/sdk.js'));
+    store.getLive = async () => ({
+      isLive: true,
+      platform: 'facebook',
+      url: 'https://www.facebook.com/scmu/videos/123/?q=$&dollar=$$',
+    });
+    body = await (await fetch(origin + '/')).text();
+    assert.ok(body.includes('q=$&amp;dollar=$$'));
+    assert.ok(!body.includes('<!-- live-bootstrap -->'));
+
+    store.getLive = async () => ({ isLive: false });
+    response = await fetch(origin + '/');
+    body = await response.text();
+    assert.ok(body.includes('&quot;isLive&quot;:false'));
+    assert.equal(response.headers.get('link'), null);
+    await store.setSettings({ maintenanceMode: true });
+    response = await fetch(origin + '/');
+    body = await response.text();
+    assert.equal(response.status, 503);
+    assert.ok(!body.includes('name="scmu-live"'));
+    assert.equal(response.headers.get('link'), null);
+  } finally {
+    store.getLive = getLive;
+    await store.setSettings({ maintenanceMode: false });
+  }
+});
+
+test(
+  'slow or unavailable live reads retain the homepage and API fallback',
+  { timeout: 2000 },
+  async () => {
+    const getLive = store.getLive;
+    let release;
+    try {
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      store.getLive = async () => {
+        await gate;
+        return { isLive: false };
+      };
+      let response = await fetch(origin + '/'),
+        body = await response.text();
+      assert.equal(response.status, 200);
+      assert.ok(!body.includes('name="scmu-live"'));
+      assert.ok(body.includes('live-boot.js'));
+      release();
+      store.getLive = async () => {
+        throw new Error('private failure');
+      };
+      response = await fetch(origin + '/');
+      body = await response.text();
+      assert.equal(response.status, 200);
+      assert.ok(!body.includes('name="scmu-live"'));
+      assert.ok(!body.includes('private failure'));
+    } finally {
+      release?.();
+      store.getLive = getLive;
+    }
+  },
+);

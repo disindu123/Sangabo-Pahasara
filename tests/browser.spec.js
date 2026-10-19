@@ -860,7 +860,21 @@ test('Admin manages the landscape About team photo while public social rows omit
   await expect(page.locator('#about-team-photo')).toBeHidden();
 });
 
+async function legacyLiveResponse(page, replacement = '') {
+  await page.route('http://127.0.0.1:9080/', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      /<!-- live-bootstrap:start -->[\s\S]*?<!-- live-bootstrap:end -->/,
+      replacement,
+    );
+    const headers = response.headers();
+    delete headers.link;
+    await route.fulfill({ response, headers, body });
+  });
+}
+
 async function publishedLive(page, platform = 'youtube') {
+  await legacyLiveResponse(page);
   const live =
     platform === 'youtube'
       ? {
@@ -1018,6 +1032,7 @@ test('without IntersectionObserver the live player remains manual with sound ava
 test('unpublished or untrusted live sources stay hidden and do not load player SDKs', async ({
   page,
 }) => {
+  await legacyLiveResponse(page);
   for (const live of [
     { isLive: false, embedUrl: '' },
     { isLive: true, embedUrl: 'https://untrusted.example/embed/video' },
@@ -1055,3 +1070,119 @@ for (const platform of ['youtube', 'facebook']) {
     expect(await page.evaluate(() => liveFixture.commands)).toEqual([]);
   });
 }
+
+for (const platform of ['youtube', 'facebook']) {
+  test(`${platform} homepage bootstrap starts the player without a live API request`, async ({
+    page,
+  }) => {
+    const initial = await (await page.request.get('/api/live')).json();
+    const url =
+      platform === 'youtube'
+        ? 'https://youtu.be/dQw4w9WgXcQ'
+        : 'https://www.facebook.com/scmu/videos/123/?q=$&dollar=$$';
+    const updated = await page.request.put('/api/live', {
+      headers: { Authorization: 'Bearer admin' },
+      data: { isLive: true, platform, url },
+    });
+    expect(updated.ok()).toBe(true);
+    try {
+      let requests = 0;
+      await page.route('**/api/live', (route) => {
+        requests++;
+        return route.abort();
+      });
+      const sdkUrl =
+        platform === 'youtube'
+          ? 'https://www.youtube.com/iframe_api'
+          : 'https://connect.facebook.net/en_US/sdk.js';
+      let sdkRequests = 0;
+      page.on('request', (request) => {
+        if (request.url() === sdkUrl) sdkRequests++;
+      });
+      const response = await page.goto('/');
+      expect(response.headers().link).toContain('rel=preload; as=script');
+      await expect(page.locator('#live-play')).toBeEnabled();
+      await expect(page.locator('#live-frame iframe')).toHaveCount(1);
+      expect(requests).toBe(0);
+      expect(sdkRequests).toBe(1);
+      const bootstrap = await page.locator('meta[name="scmu-live"]').getAttribute('content');
+      expect(JSON.parse(bootstrap).platform).toBe(platform);
+      expect(JSON.parse(bootstrap).url).toBe(url);
+      const sdk =
+        platform === 'youtube'
+          ? 'https://www.youtube.com/iframe_api'
+          : 'https://connect.facebook.net/en_US/sdk.js';
+      await expect(page.locator(`link[rel="preload"][as="script"][href="${sdk}"]`)).toHaveCount(1);
+      await expect(page.locator(`script[src="${sdk}"]`)).toHaveCount(1);
+    } finally {
+      await page.request.put('/api/live', {
+        headers: { Authorization: 'Bearer admin' },
+        data: initial,
+      });
+    }
+  });
+}
+
+test('inactive homepage bootstrap avoids live API and provider SDK requests', async ({ page }) => {
+  const initial = await (await page.request.get('/api/live')).json();
+  await page.request.put('/api/live', {
+    headers: { Authorization: 'Bearer admin' },
+    data: { isLive: false },
+  });
+  try {
+    let requests = 0;
+    await page.route('**/api/live', (route) => {
+      requests++;
+      return route.abort();
+    });
+    await page.goto('/');
+    await expect(page.locator('#live-section')).toBeHidden();
+    const data = JSON.parse(await page.locator('meta[name="scmu-live"]').getAttribute('content'));
+    expect(data.isLive).toBe(false);
+    expect(requests).toBe(0);
+    await expect(page.locator('link[rel="preload"][as="script"]')).toHaveCount(0);
+  } finally {
+    await page.request.put('/api/live', {
+      headers: { Authorization: 'Bearer admin' },
+      data: initial,
+    });
+  }
+});
+
+test('live startup is independent of a slow homepage script', async ({ page }) => {
+  const initial = await (await page.request.get('/api/live')).json();
+  await page.request.put('/api/live', {
+    headers: { Authorization: 'Bearer admin' },
+    data: { isLive: true, platform: 'youtube', url: 'https://youtu.be/dQw4w9WgXcQ' },
+  });
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/js/home.js?*', async (route) => {
+    await held;
+    await route.continue();
+  });
+  try {
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect(page.locator('#live-play')).toBeEnabled();
+    await expect(page.locator('#live-frame iframe')).toHaveCount(1);
+    expect(await page.evaluate(() => window.liveFixture.commands)).toEqual([]);
+  } finally {
+    release();
+    await page.request.put('/api/live', {
+      headers: { Authorization: 'Bearer admin' },
+      data: initial,
+    });
+  }
+});
+
+test('malformed HTML metadata falls back to the live API', async ({ page }) => {
+  await publishedLive(page);
+  await page.unroute('http://127.0.0.1:9080/');
+  await legacyLiveResponse(page, '<meta name="scmu-live" content="invalid-json" />');
+  await page.goto('/');
+  await expect(page.locator('meta[name="scmu-live"]')).toHaveAttribute('content', 'invalid-json');
+  await expect(page.locator('#live-play')).toBeEnabled();
+  await expect(page.locator('#live-frame iframe')).toHaveCount(1);
+});
